@@ -12,7 +12,7 @@ t2 create foo
 ### List available tasks
 
 ```bash
-t2 list
+t2 tasks 
 ```
 
 ### Delete a task

@@ -28,8 +28,8 @@ def main():
     create_parser.add_argument('name', help='Task name')
     create_parser.set_defaults(func=do_create)
 
-    list_parser = subparsers.add_parser('list')
-    list_parser.set_defaults(func=do_list)
+    tasks_parser = subparsers.add_parser('tasks')
+    tasks_parser.set_defaults(func=do_tasks)
 
     remove_parser = subparsers.add_parser('remove')
     remove_parser.add_argument('name', help='Task name')
@@ -74,7 +74,7 @@ def do_create(args):
     tt.task.create(args.name)
 
 
-def do_list(args):
+def do_tasks(args):
     log.info('list tasks')
     tt.task.list()
 

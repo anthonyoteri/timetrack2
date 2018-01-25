@@ -55,15 +55,18 @@ def main():
     summarize_parser.set_defaults(func=do_summarize)
 
     args = parser.parse_args()
-
-    configure_logging(level=logging.DEBUG if args.verbose else logging.WARNING)
+    configure_logging(args.verbose)
 
     connect(echo=args.verbose)
     args.func(args)
 
 
-def configure_logging(level):
-    logging.basicConfig(level=level)
+def configure_logging(verbose=False):
+    if verbose:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.WARNING,
+                            format='%(levelname)s:%(message)s')
 
 
 def do_create(args):

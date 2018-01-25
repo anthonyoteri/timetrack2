@@ -49,19 +49,23 @@ def list(session):
         print("  %s" % task.name)
 
 
-@transactional
-def remove(session, name):
+def remove(name):
     log.debug('remove task with name %s', name)
 
     try:
-        task = session.query(Task).filter(Task.name == name).one()
-    except NoResultFound:
-        log.error('no such task with name %s', name)
-        return
+        with transaction() as session:
+            try:
+                task = session.query(Task).filter(Task.name == name).one()
+            except NoResultFound:
+                log.error('no such task with name %s', name)
+                return
 
-    if not task.timers:
-        session.delete(task)
-    else:
-        log.error('task %s has %d active timers' % (task.name, len(task.timers)))
+            if not task.timers:
+                session.delete(task)
+            else:
+                log.error('task %s has %d active timers' % (task.name, len(task.timers)))
+                return
+    except IntegrityError:
+        log.error("Can not remove a task with existing records")
         return
 

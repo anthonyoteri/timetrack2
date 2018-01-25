@@ -49,6 +49,15 @@ def main():
     cancel_parser.add_argument('timer', help='Timer ID or Task Name')
     cancel_parser.set_defaults(func=do_cancel)
 
+    update_parser = subparsers.add_parser('update')
+    update_parser.add_argument('timer', help='Timer ID or Task Name')
+    update_command_group = update_parser.add_mutually_exclusive_group(
+            required=True)
+    update_command_group.add_argument('--task', action='store_true')
+    update_command_group.add_argument('--start', action='store_true')
+    update_parser.add_argument('value')
+    update_parser.set_defaults(func=do_update)
+
     timers_parser = subparsers.add_parser('timers')
     timers_parser.set_defaults(func=do_timers)
 
@@ -101,6 +110,15 @@ def do_stop(args):
 def do_cancel(args):
     log.info('cancel timer')
     tt.timer.cancel(args.timer)
+
+
+def do_update(args):
+    log.info('update timer')
+
+    if args.task:
+        tt.timer.update_task(args.timer, args.value)
+    elif args.start:
+        tt.timer.update_start(args.timer, args.value)
 
 
 def do_timers(args):

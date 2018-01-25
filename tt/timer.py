@@ -8,6 +8,7 @@ from datetime import datetime
 import logging
 
 import humanfriendly
+import dateparser
 from sqlalchemy import Column, DateTime, ForeignKey, Integer
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import relationship
@@ -22,6 +23,12 @@ log = logging.getLogger(__name__)
 # Limit on the number of active timers
 # TODO: Make this configurable
 ACTIVE_TIMER_LIMIT = 1
+
+# TODO: Make this configurable
+DATEPARSER_SETTINGS = {
+    'TO_TIMEZONE': 'UTC',
+    'RETURN_AS_TIMEZONE_AWARE': False
+}
 
 
 class TimerLimitExceeded(AssertionError):
@@ -108,7 +115,7 @@ def stop(session, t, timestamp):
     timer = _find_timer_by_id_or_task(session, t)
     if timer is None:
         log.error("Timer not found")
-        return None
+        return
 
     timestamp = timestamp.replace(microsecond=0)
 
@@ -124,9 +131,37 @@ def cancel(session, t):
     timer = _find_timer_by_id_or_task(session, t)
     if timer is None:
         log.error("Timer not found")
-        return None
+        return
 
     session.delete(timer)
+
+
+@transactional
+def update_task(session, t, value):
+    timer = _find_timer_by_id_or_task(session, t)
+    if timer is None:
+        log.error("Timer not found")
+        return
+
+    try:
+        task = session.query(Task).filter(Task.name == value).one()
+    except NoResultFound:
+        log.error('Invalid task %s' % value)
+        return
+
+    timer.task = task
+
+
+@transactional
+def update_start(session, t, value):
+    timer = _find_timer_by_id_or_task(session, t)
+    if timer is None:
+        log.error("Timer not found")
+        return
+
+    timestamp = dateparser.parse(
+        value, settings=DATEPARSER_SETTINGS).replace(microsecond=0)
+    timer.start_time = timestamp
 
 
 @transactional

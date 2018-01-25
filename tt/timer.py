@@ -87,7 +87,11 @@ def stop(session, t, timestamp):
     try:
         timer = session.query(Timer).get(int(t))
     except ValueError:
-        task = session.query(Task).filter(Task.name == t).one()
+        try:
+            task = session.query(Task).filter(Task.name == t).one()
+        except NoResultFound:
+            log.error("Invalid task %s" % t)
+            return
         try:
             timer = session.query(Timer).filter(Timer.task == task).one()
         except MultipleResultsFound:
@@ -96,6 +100,10 @@ def stop(session, t, timestamp):
         except NoResultFound:
             log.warn('No timer found with task %s', t)
             return
+
+    if timer is None:
+        log.error("Timer not found")
+        return
 
     timestamp = timestamp.replace(microsecond=0)
 

@@ -7,9 +7,10 @@ from __future__ import absolute_import, division, print_function
 import logging
 
 from sqlalchemy import Column, Integer, String
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import relationship
 
-from tt.db import Base, transactional
+from tt.db import Base, transaction, transactional
 
 log = logging.getLogger(__name__)
 
@@ -26,12 +27,16 @@ class Task(Base):
         return "<Task(id={}, name={})>".format(self.id, self.name)
 
 
-@transactional
-def create(session, name):
+def create(name):
     log.debug('creating task with name %s', name)
 
-    task = Task(name=name)
-    session.add(task)
+    try:
+        with transaction() as session:
+            task = Task(name=name)
+            session.add(task)
+    except IntegrityError as err:
+        log.warning("A task with name %s already exists" % name)
+        return
 
 
 @transactional

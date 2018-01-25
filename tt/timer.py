@@ -161,6 +161,11 @@ def update_start(session, t, value):
 
     timestamp = dateparser.parse(
         value, settings=DATEPARSER_SETTINGS).replace(microsecond=0)
+
+    if timestamp > datetime.utcnow():
+        log.error("Cannot change start time in the future")
+        return
+
     timer.start_time = timestamp
 
 

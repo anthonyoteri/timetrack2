@@ -45,6 +45,10 @@ def main():
     stop_parser.add_argument('timer', help="Timer ID or Task Name")
     stop_parser.set_defaults(func=do_stop)
 
+    cancel_parser = subparsers.add_parser('cancel')
+    cancel_parser.add_argument('timer', help='Timer ID or Task Name')
+    cancel_parser.set_defaults(func=do_cancel)
+
     timers_parser = subparsers.add_parser('timers')
     timers_parser.set_defaults(func=do_timers)
 
@@ -92,6 +96,11 @@ def do_start(args):
 def do_stop(args):
     log.info('stop timer')
     tt.timer.stop(args.timer, datetime.utcnow())
+
+
+def do_cancel(args):
+    log.info('cancel timer')
+    tt.timer.cancel(args.timer)
 
 
 def do_timers(args):

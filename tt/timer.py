@@ -81,29 +81,34 @@ def _enforce_active_timer_limit(session):
             active_count, ACTIVE_TIMER_LIMIT))
 
 
-@transactional
-def stop(session, t, timestamp):
-
+def _find_timer_by_id_or_task(session, id_or_task):
     try:
-        timer = session.query(Timer).get(int(t))
+        timer = session.query(Timer).get(int(id_or_task))
     except ValueError:
         try:
-            task = session.query(Task).filter(Task.name == t).one()
+            task = session.query(Task).filter(Task.name == id_or_task).one()
         except NoResultFound:
-            log.error("Invalid task %s" % t)
-            return
+            log.error("Invalid task %s" % id_or_task)
+            return None
         try:
             timer = session.query(Timer).filter(Timer.task == task).one()
         except MultipleResultsFound:
-            log.warn('Multiple timers found for task %s, use id instead', t)
-            return
+            log.warn('Multiple timers found for task %s, use id instead',
+                     id_or_task)
+            return None
         except NoResultFound:
-            log.warn('No timer found with task %s', t)
-            return
+            log.warn('No timer found with task %s', id_or_task)
+            return None
 
+    return timer
+
+
+@transactional
+def stop(session, t, timestamp):
+    timer = _find_timer_by_id_or_task(session, t)
     if timer is None:
         log.error("Timer not found")
-        return
+        return None
 
     timestamp = timestamp.replace(microsecond=0)
 
@@ -111,6 +116,16 @@ def stop(session, t, timestamp):
                         start_time=timer.start_time,
                         stop_time=timestamp)
     session.add(record)
+    session.delete(timer)
+
+
+@transactional
+def cancel(session, t):
+    timer = _find_timer_by_id_or_task(session, t)
+    if timer is None:
+        log.error("Timer not found")
+        return None
+
     session.delete(timer)
 
 
@@ -167,6 +182,3 @@ def summarize(session):
         'TOTAL', humanfriendly.format_timespan(sum(summary.values()))))
 
     print('+' + "-" * 78 + '+')
-
-
-         

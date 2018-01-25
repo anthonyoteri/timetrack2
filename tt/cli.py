@@ -56,13 +56,14 @@ def main():
 
     args = parser.parse_args()
 
-    if args.verbose:
-        logging.basicConfig(level=logging.DEBUG)
-    else:
-        logging.basicConfig(level=logging.WARNING)
+    configure_logging(level=logging.DEBUG if args.verbose else logging.WARNING)
 
     connect(echo=args.verbose)
     args.func(args)
+
+
+def configure_logging(level):
+    logging.basicConfig(level=level)
 
 
 def do_create(args):

@@ -9,6 +9,7 @@ import logging
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import relationship
+from sqlalchemy.orm.exc import NoResultFound
 
 from tt.db import Base, transaction, transactional
 
@@ -52,14 +53,15 @@ def list(session):
 def remove(session, name):
     log.debug('remove task with name %s', name)
 
-    task = session.query(Task).filter(Task.name == name).one()
-    if not task:
-        log.warning('no such task with name %s', name)
+    try:
+        task = session.query(Task).filter(Task.name == name).one()
+    except NoResultFound:
+        log.error('no such task with name %s', name)
         return
 
     if not task.timers:
         session.delete(task)
     else:
-        log.warning('task %s has %d active timers' % (task.name, len(task.timers)))
+        log.error('task %s has %d active timers' % (task.name, len(task.timers)))
         return
 

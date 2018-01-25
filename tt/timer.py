@@ -19,6 +19,14 @@ from tt.task import Task
 
 log = logging.getLogger(__name__)
 
+# Limit on the number of active timers
+# TODO: Make this configurable
+ACTIVE_TIMER_LIMIT = 1
+
+
+class TimerLimitExceeded(AssertionError):
+    pass
+
 
 class Timer(Base):
     __tablename__ = 'timer'
@@ -53,8 +61,10 @@ class TimeRecord(Base):
 def start(task, timestamp):
     try:
         with transaction() as session:
-            task = session.query(Task).filter(Task.name == task).one()
 
+            _enforce_active_timer_limit(session)
+
+            task = session.query(Task).filter(Task.name == task).one()
             timestamp = timestamp.replace(microsecond=0)
 
             timer = Timer(task=task, start_time=timestamp)
@@ -62,6 +72,13 @@ def start(task, timestamp):
     except IntegrityError:
         log.error('A timer for this task is already running')
         return
+
+
+def _enforce_active_timer_limit(session):
+    active_count = session.query(Timer).count()
+    if active_count >= ACTIVE_TIMER_LIMIT:
+        raise TimerLimitExceeded("Too many running timers %d, limit %d" % (
+            active_count, ACTIVE_TIMER_LIMIT))
 
 
 @transactional
@@ -138,7 +155,9 @@ def summarize(session):
         print(format_string % (task, humanfriendly.format_timespan(elapsed)))
     print('+' + "-" * 78 + '+')
 
-    print (format_string % ('TOTAL', humanfriendly.format_timespan(sum(summary.values()))))
+    print (format_string % (
+        'TOTAL', humanfriendly.format_timespan(sum(summary.values()))))
+
     print('+' + "-" * 78 + '+')
 
 

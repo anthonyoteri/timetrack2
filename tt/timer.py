@@ -1,7 +1,7 @@
 # Copyright (C) 2018, Anthony Oteri
 # All rights reserved.
 
-from __future__ import absolute_import, division, print_function
+
 
 import collections
 from datetime import datetime
@@ -214,7 +214,7 @@ def summarize(session):
     print('+' + "-" * 78 + '+')
     print(format_string % ("TASK", "TOTAL"))
     print('+' + "=" * 78 + '+')
-    for task, elapsed in summary.iteritems():
+    for task, elapsed in summary.items():
         print(format_string % (task, humanfriendly.format_timespan(elapsed)))
     print('+' + "-" * 78 + '+')
 

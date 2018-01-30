@@ -7,47 +7,18 @@ import logging
 
 import humanfriendly
 import dateparser
-from sqlalchemy import Column, DateTime, ForeignKey, Integer
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import relationship
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 
-from tt.db import Base, transaction, transactional
+from tt.db import transaction, transactional
 from tt.exc import TimerLimitExceeded
 from tt.task import Task
+from tt.orm import Timer, TimeRecord
 
 log = logging.getLogger(__name__)
 
 ACTIVE_TIMER_LIMIT = 1
 DATEPARSER_SETTINGS = {'TO_TIMEZONE': 'UTC', 'RETURN_AS_TIMEZONE_AWARE': False}
-
-
-class Timer(Base):
-    __tablename__ = 'timer'
-    id = Column(Integer, primary_key=True)
-    start_time = Column(DateTime)
-    task_id = Column(
-        Integer, ForeignKey('task.id'), nullable=False, unique=True)
-
-    task = relationship("Task", back_populates="timers")
-
-    def __repr__(self):
-        return '<Timer(id=%s, task=%s, start_time=%s)>' % (self.id, self.task,
-                                                           self.start_time)
-
-
-class TimeRecord(Base):
-    __tablename__ = 'time_record'
-    id = Column(Integer, primary_key=True)
-    start_time = Column(DateTime, nullable=False)
-    stop_time = Column(DateTime, nullable=False)
-
-    task_id = Column(Integer, ForeignKey('task.id'), nullable=False)
-    task = relationship("Task", back_populates="records")
-
-    def __repr__(self):
-        return '<TimeRecord(id=%s, task=%s, start_time=%s, stop_time=%s)>' % (
-            self.id, self.task, self.start_time, self.stop_time)
 
 
 def start(task, timestamp):

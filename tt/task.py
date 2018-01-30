@@ -3,26 +3,13 @@
 
 import logging
 
-from sqlalchemy import Column, Integer, String
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import relationship
 from sqlalchemy.orm.exc import NoResultFound
 
-from tt.db import Base, transaction, transactional
+from tt.db import transaction, transactional
+from tt.orm import Task
 
 log = logging.getLogger(__name__)
-
-
-class Task(Base):
-    __tablename__ = 'task'
-    id = Column(Integer, primary_key=True)
-    name = Column(String(255), nullable=False, unique=True)
-
-    timers = relationship("Timer", back_populates="task")
-    records = relationship("TimeRecord", back_populates="task")
-
-    def __repr__(self):
-        return "<Task(id={}, name={})>".format(self.id, self.name)
 
 
 def create(name):
@@ -32,7 +19,7 @@ def create(name):
         with transaction() as session:
             task = Task(name=name)
             session.add(task)
-    except IntegrityError as err:
+    except IntegrityError:
         log.warning("A task with name %s already exists" % name)
         return
 

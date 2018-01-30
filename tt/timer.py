@@ -1,8 +1,6 @@
 # Copyright (C) 2018, Anthony Oteri
 # All rights reserved.
 
-from __future__ import absolute_import, division, print_function
-
 import collections
 from datetime import datetime
 import logging
@@ -17,7 +15,6 @@ from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from tt.db import Base, transaction, transactional
 from tt.task import Task
 
-
 log = logging.getLogger(__name__)
 
 # Limit on the number of active timers
@@ -25,10 +22,7 @@ log = logging.getLogger(__name__)
 ACTIVE_TIMER_LIMIT = 1
 
 # TODO: Make this configurable
-DATEPARSER_SETTINGS = {
-    'TO_TIMEZONE': 'UTC',
-    'RETURN_AS_TIMEZONE_AWARE': False
-}
+DATEPARSER_SETTINGS = {'TO_TIMEZONE': 'UTC', 'RETURN_AS_TIMEZONE_AWARE': False}
 
 
 class TimerLimitExceeded(AssertionError):
@@ -39,16 +33,14 @@ class Timer(Base):
     __tablename__ = 'timer'
     id = Column(Integer, primary_key=True)
     start_time = Column(DateTime)
-    task_id = Column(Integer,
-                     ForeignKey('task.id'),
-                     nullable=False,
-                     unique=True)
+    task_id = Column(
+        Integer, ForeignKey('task.id'), nullable=False, unique=True)
 
     task = relationship("Task", back_populates="timers")
 
     def __repr__(self):
-        return '<Timer(id=%s, task=%s, start_time=%s)>' % (
-                self.id, self.task, self.start_time)
+        return '<Timer(id=%s, task=%s, start_time=%s)>' % (self.id, self.task,
+                                                           self.start_time)
 
 
 class TimeRecord(Base):
@@ -62,7 +54,7 @@ class TimeRecord(Base):
 
     def __repr__(self):
         return '<TimeRecord(id=%s, task=%s, start_time=%s, stop_time=%s)>' % (
-                self.id, self.task, self.start_time, self.stop_time)
+            self.id, self.task, self.start_time, self.stop_time)
 
 
 def start(task, timestamp):
@@ -84,8 +76,8 @@ def start(task, timestamp):
 def _enforce_active_timer_limit(session):
     active_count = session.query(Timer).count()
     if active_count >= ACTIVE_TIMER_LIMIT:
-        raise TimerLimitExceeded("Too many running timers %d, limit %d" % (
-            active_count, ACTIVE_TIMER_LIMIT))
+        raise TimerLimitExceeded("Too many running timers %d, limit %d" %
+                                 (active_count, ACTIVE_TIMER_LIMIT))
 
 
 def _find_timer_by_id_or_task(session, id_or_task):
@@ -119,9 +111,8 @@ def stop(session, t, timestamp):
 
     timestamp = timestamp.replace(microsecond=0)
 
-    record = TimeRecord(task=timer.task,
-                        start_time=timer.start_time,
-                        stop_time=timestamp)
+    record = TimeRecord(
+        task=timer.task, start_time=timer.start_time, stop_time=timestamp)
     session.add(record)
     session.delete(timer)
 
@@ -179,9 +170,9 @@ def timers(session):
     print('+' + "=" * 78 + '+')
     for timer in session.query(Timer).all():
         elapsed = datetime.utcnow().replace(microsecond=0) - timer.start_time
-        print(format_string % (
-            timer.id, timer.task.name, timer.start_time,
-            humanfriendly.format_timespan(elapsed.total_seconds())))
+        print(format_string %
+              (timer.id, timer.task.name, timer.start_time,
+               humanfriendly.format_timespan(elapsed.total_seconds())))
 
     print('+' + "-" * 78 + '+')
 
@@ -195,9 +186,9 @@ def history(session):
     print('+' + "=" * 78 + '+')
     for record in session.query(TimeRecord).all():
         total = record.stop_time - record.start_time
-        print(format_string % (
-            record.id, record.task.name, record.start_time,
-            humanfriendly.format_timespan(total.total_seconds())))
+        print(format_string %
+              (record.id, record.task.name, record.start_time,
+               humanfriendly.format_timespan(total.total_seconds())))
 
     print('+' + "-" * 78 + '+')
 
@@ -214,11 +205,11 @@ def summarize(session):
     print('+' + "-" * 78 + '+')
     print(format_string % ("TASK", "TOTAL"))
     print('+' + "=" * 78 + '+')
-    for task, elapsed in summary.iteritems():
+    for task, elapsed in summary.items():
         print(format_string % (task, humanfriendly.format_timespan(elapsed)))
     print('+' + "-" * 78 + '+')
 
-    print (format_string % (
-        'TOTAL', humanfriendly.format_timespan(sum(summary.values()))))
+    print(format_string %
+          ('TOTAL', humanfriendly.format_timespan(sum(summary.values()))))
 
     print('+' + "-" * 78 + '+')

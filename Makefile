@@ -1,4 +1,5 @@
 VIRTUALENV ?= env
+PYTHON ?= python3.6
 
 all: build
 
@@ -7,7 +8,7 @@ build: $(VIRTUALENV)
 
 
 $(VIRTUALENV):
-	virtualenv $(VIRTUALENV)
+	virtualenv $(VIRTUALENV) --python=$(PYTHON)
 	$(VIRTUALENV)/bin/pip install -r requirements.txt
 
 .PHONY: clean

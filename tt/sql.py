@@ -46,3 +46,7 @@ def connect(db_url='sqlite:///timetrack.db', echo=False):
         db_url, connect_args=DB_CONNECT_ARGS, native_datetime=True, echo=echo)
     Base.metadata.create_all(engine)
     Session.configure(bind=engine)
+
+
+def connect_test():
+    connect(db_url='sqlite:///:memory:', echo=True)

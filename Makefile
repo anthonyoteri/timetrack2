@@ -18,6 +18,12 @@ $(VIRTUALENV)/bin/flake8: $(VIRTUALENV)
 check: $(VIRTUALENV) $(VIRTUALENV)/bin/flake8
 	$(VIRTUALENV)/bin/flake8 tt
 
+$(VIRTUALENV)/bin/py.test: $(VIRTUALENV)
+	$(VIRTUALENV)/bin/pip install pytest
+
+test: build $(VIRTUALENV)/bin/py.test
+	$(VIRTUALENV)/bin/py.test --verbose tt
+
 .PHONY: clean
 clean:
 	rm -rf $(VIRTUALENV) build dist *egg-info*

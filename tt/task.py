@@ -6,8 +6,8 @@ import logging
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import NoResultFound
 
-from tt.db import transaction, transactional
 from tt.orm import Task
+from tt.sql import transaction, transactional
 
 log = logging.getLogger(__name__)
 

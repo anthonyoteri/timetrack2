@@ -10,8 +10,8 @@ import dateparser
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 
-from tt.db import transaction, transactional
 from tt.exc import TimerLimitExceeded
+from tt.sql import transaction, transactional
 from tt.task import Task
 from tt.orm import Timer, TimeRecord
 

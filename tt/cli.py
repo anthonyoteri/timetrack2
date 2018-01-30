@@ -5,7 +5,7 @@ import argparse
 from datetime import datetime
 import logging
 
-from tt.db import connect
+from tt.sql import connect
 import tt.task
 import tt.timer
 

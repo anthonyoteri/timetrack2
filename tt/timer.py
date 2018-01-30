@@ -13,20 +13,13 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 
 from tt.db import Base, transaction, transactional
+from tt.exc import TimerLimitExceeded
 from tt.task import Task
 
 log = logging.getLogger(__name__)
 
-# Limit on the number of active timers
-# TODO: Make this configurable
 ACTIVE_TIMER_LIMIT = 1
-
-# TODO: Make this configurable
 DATEPARSER_SETTINGS = {'TO_TIMEZONE': 'UTC', 'RETURN_AS_TIMEZONE_AWARE': False}
-
-
-class TimerLimitExceeded(AssertionError):
-    pass
 
 
 class Timer(Base):

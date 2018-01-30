@@ -13,6 +13,10 @@ log = logging.getLogger(__name__)
 Session = scoped_session(sessionmaker(expire_on_commit=False))
 Base = declarative_base()
 
+DB_CONNECT_ARGS = {
+    'detect_types': sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
+}
+
 
 def transactional(fn):
     def inner(*args, **kwargs):
@@ -38,11 +42,7 @@ def transaction():
 def connect(db_url='sqlite:///timetrack.db', echo=False):
     log.info("Connecting to database %s", db_url)
 
-    connect_args = {
-        'detect_types': sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
-    }
-
     engine = create_engine(
-        db_url, connect_args=connect_args, native_datetime=True, echo=echo)
+        db_url, connect_args=DB_CONNECT_ARGS, native_datetime=True, echo=echo)
     Base.metadata.create_all(engine)
     Session.configure(bind=engine)

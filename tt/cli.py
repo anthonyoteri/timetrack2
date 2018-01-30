@@ -1,8 +1,6 @@
 # Copyright (C) 2018, Anthony Oteri
 # All rights reserved
 
-
-
 import argparse
 from datetime import datetime
 import logging
@@ -10,7 +8,6 @@ import logging
 from tt.db import connect
 import tt.task
 import tt.timer
-
 
 log = logging.getLogger('tt.cli')
 
@@ -52,7 +49,7 @@ def main():
     update_parser = subparsers.add_parser('update')
     update_parser.add_argument('timer', help='Timer ID or Task Name')
     update_command_group = update_parser.add_mutually_exclusive_group(
-            required=True)
+        required=True)
     update_command_group.add_argument('--task', action='store_true')
     update_command_group.add_argument('--start', action='store_true')
     update_parser.add_argument('value')
@@ -78,8 +75,8 @@ def configure_logging(verbose=False):
     if verbose:
         logging.basicConfig(level=logging.DEBUG)
     else:
-        logging.basicConfig(level=logging.WARNING,
-                            format='%(levelname)s:%(message)s')
+        logging.basicConfig(
+            level=logging.WARNING, format='%(levelname)s:%(message)s')
 
 
 def do_create(args):

@@ -1,8 +1,6 @@
 # Copyright (C) 2018, Anthony Oteri
 # All rights reserved.
 
-
-
 import contextlib
 import logging
 
@@ -10,7 +8,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
 import sqlite3
-
 
 log = logging.getLogger(__name__)
 Session = scoped_session(sessionmaker(expire_on_commit=False))
@@ -45,7 +42,7 @@ def connect(db_url='sqlite:///timetrack.db', echo=False):
         'detect_types': sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
     }
 
-    engine = create_engine(db_url, connect_args=connect_args,
-                           native_datetime=True, echo=echo)
+    engine = create_engine(
+        db_url, connect_args=connect_args, native_datetime=True, echo=echo)
     Base.metadata.create_all(engine)
     Session.configure(bind=engine)

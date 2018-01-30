@@ -1,9 +1,6 @@
 # Copyright (C) 2018, Anthony Oteri
 # All rights reserved
 
-
-
-
 import logging
 
 from sqlalchemy import Column, Integer, String
@@ -63,9 +60,9 @@ def remove(name):
             if not task.timers:
                 session.delete(task)
             else:
-                log.error('task %s has %d active timers' % (task.name, len(task.timers)))
+                log.error('task %s has %d active timers' % (task.name,
+                                                            len(task.timers)))
                 return
     except IntegrityError:
         log.error("Can not remove a task with existing records")
         return
-

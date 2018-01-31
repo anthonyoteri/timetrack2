@@ -6,7 +6,7 @@ from datetime import datetime
 import pytest
 
 from tt.exc import ValidationError
-from tt.task import create, list as list_, remove
+from tt.task import create, remove, tasks
 from tt.orm import Task, Timer
 
 
@@ -85,13 +85,11 @@ def test_remove_task_with_timers_raises(session):
         remove('foo')
 
 
-@pytest.mark.skip(reason='No way of currently testing this')
-def test_list(session):
+def test_all(session):
 
     names = ['foo', 'bar', 'baz', 'boom']
     session.add_all([Task(name=n) for n in names])
     session.flush()
 
-    list_()
-
-    # TODO: Refactor list function and complete this test.
+    for expected_name, task in zip(names, tasks()):
+        assert task.name == expected_name

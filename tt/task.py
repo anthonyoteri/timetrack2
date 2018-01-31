@@ -27,13 +27,10 @@ def create(name):
         raise ValidationError("A task with name %s already exists" % name)
 
 
-def list():
-    log.debug('listing tasks')
-
-    print("All tasks:")
+def tasks():
     with transaction() as session:
         for task in session.query(Task).all():
-            print("  %s" % task.name)
+            yield task
 
 
 def remove(name):

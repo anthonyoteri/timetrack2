@@ -2,5 +2,5 @@
 # All rights reserved.
 
 
-class TimerLimitExceeded(AssertionError):
+class ValidationError(Exception):
     pass

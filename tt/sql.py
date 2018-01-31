@@ -11,11 +11,34 @@ import sqlite3
 
 log = logging.getLogger(__name__)
 Session = scoped_session(sessionmaker(expire_on_commit=False))
-Base = declarative_base()
 
 DB_CONNECT_ARGS = {
     'detect_types': sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
 }
+
+
+class _Base(object):
+    def __eq__(self, other):
+        for k in self.__table__.columns.keys():
+            try:
+                if getattr(self, k) != getattr(other, k):
+                    return False
+            except AttributeError:
+                return False
+        return True
+
+    def __str__(self):
+        fields = ('%s="%s"' % (k, v) for k, v in self.__dict__.items()
+                  if not k.startswith('_'))
+        return "<%s[%s]>" % (self.__class__.__name__, ', '.join(fields))
+
+    def __repr__(self):
+        fields = ('%s="%r"' % (k, v) for k, v in self.__dict__.items()
+                  if not k.startswith('_'))
+        return "<%s[%s]>" % (self.__class__.__name__, ', '.join(fields))
+
+
+Base = declarative_base(cls=_Base)
 
 
 def transactional(fn):
@@ -32,7 +55,7 @@ def transaction():
     try:
         yield session
         session.commit()
-    except Exception:
+    except Exception as err:
         session.rollback()
         raise
     finally:
@@ -49,4 +72,4 @@ def connect(db_url='sqlite:///timetrack.db', echo=False):
 
 
 def connect_test():
-    connect(db_url='sqlite:///:memory:', echo=True)
+    connect(db_url='sqlite:///:memory:', echo=False)

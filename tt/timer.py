@@ -79,3 +79,9 @@ def update(id, task=None, start=None, stop=None):
 def remove(id):
     with transaction() as session:
         session.query(Timer).filter(Timer.id == id).delete()
+
+
+def timers():
+    with transaction() as session:
+        for timer in session.query(Timer).all():
+            yield timer

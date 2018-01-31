@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import pytest
 
 from tt.exc import ValidationError
-from tt.timer import create, update, remove
+from tt.timer import create, update, remove, timers
 from tt.orm import Task, Timer
 
 
@@ -187,3 +187,24 @@ def test_remove(session, task):
     remove(1)
 
     assert session.query(Timer).count() == 0
+
+
+def test_timers(session, task):
+    session.add(task)
+    session.flush()
+
+    now = datetime.utcnow()
+    duration = timedelta(hours=1)
+
+    for hours in range(100, 0, -1):
+        offset = timedelta(hours=hours)
+        start = now - offset - duration
+        stop = start + duration
+
+        session.add(Timer(task=task, start=start, stop=stop))
+
+    session.flush()
+    assert session.query(Timer).count() == 100
+
+    timers_ = timers()
+    assert len(list(timers_)) == 100

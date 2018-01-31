@@ -74,3 +74,8 @@ def update(id, task=None, start=None, stop=None):
 
         except AssertionError as err:
             raise ValidationError("Invalid timer %s: %s" % (timer, err))
+
+
+def remove(id):
+    with transaction() as session:
+        session.query(Timer).filter(Timer.id == id).delete()

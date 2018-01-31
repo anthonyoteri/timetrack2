@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import pytest
 
 from tt.exc import ValidationError
-from tt.timer import create, update
+from tt.timer import create, update, remove
 from tt.orm import Task, Timer
 
 
@@ -174,3 +174,16 @@ def test_update_stop_time_invalid_constraint(session, task, offset):
 
     with pytest.raises(ValidationError):
         update(1, stop=stop_time)
+
+
+def test_remove(session, task):
+    session.add(task)
+    session.flush()
+
+    session.add(Timer(task=task, start=datetime.utcnow()))
+    session.flush()
+
+    assert session.query(Timer).count() == 1
+    remove(1)
+
+    assert session.query(Timer).count() == 0

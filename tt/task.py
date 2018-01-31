@@ -7,13 +7,17 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import NoResultFound
 
 from tt.orm import Task
-from tt.sql import transaction, transactional
+from tt.sql import transaction
 
 log = logging.getLogger(__name__)
 
 
 def create(name):
     log.debug('creating task with name %s', name)
+
+    if not name:
+        log.warning("Invalid task name")
+        return
 
     try:
         with transaction() as session:
@@ -24,13 +28,13 @@ def create(name):
         return
 
 
-@transactional
-def list(session):
+def list():
     log.debug('listing tasks')
 
     print("All tasks:")
-    for task in session.query(Task).all():
-        print("  %s" % task.name)
+    with transaction() as session:
+        for task in session.query(Task).all():
+            print("  %s" % task.name)
 
 
 def remove(name):

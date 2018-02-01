@@ -1,7 +1,7 @@
 # Copyright (C) 2018, Anthony Oteri
 # All rights reserved.
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 
 from sqlalchemy.orm.exc import NoResultFound
@@ -85,3 +85,31 @@ def timers():
     with transaction() as session:
         for timer in session.query(Timer).all():
             yield timer
+
+
+def timers_by_timerange(start, end=datetime.utcnow()):
+    with transaction() as session:
+        for timer in session.query(Timer).filter(start < Timer.start,
+                                                 Timer.start <= end).all():
+            yield timer
+
+
+def groups_by_timerange(start, end=datetime.utcnow()):
+
+    with transaction() as session:
+
+        tasks = [
+            t[0]
+            for t in session.query(Timer.task_id).filter(
+                start < Timer.start, Timer.start <= end).distinct(
+                    Timer.task_id).order_by(Timer.task_id).all()
+        ]
+
+        for task_id in tasks:
+            timers = session.query(Timer).filter(
+                start < Timer.start, Timer.start <= end,
+                Timer.task_id == task_id).all()
+            task_name = timers[0].task.name
+            elapsed = timedelta(
+                seconds=sum(t.elapsed.total_seconds() for t in timers))
+            yield task_name, elapsed

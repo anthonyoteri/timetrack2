@@ -6,7 +6,8 @@ from datetime import datetime, timedelta
 import pytest
 
 from tt.exc import ValidationError
-from tt.timer import create, update, remove, timers
+from tt.timer import (create, groups_by_timerange, remove, timers,
+                      timers_by_timerange, update)
 from tt.orm import Task, Timer
 
 
@@ -200,7 +201,6 @@ def test_timers(session, task):
         offset = timedelta(hours=hours)
         start = now - offset - duration
         stop = start + duration
-
         session.add(Timer(task=task, start=start, stop=stop))
 
     session.flush()
@@ -208,3 +208,50 @@ def test_timers(session, task):
 
     timers_ = timers()
     assert len(list(timers_)) == 100
+
+
+def test_timers_by_timerange(session, task):
+
+    session.add(task)
+    session.flush()
+
+    now = datetime.utcnow()
+    duration = timedelta(hours=1)
+
+    for hours in range(100, 0, -1):
+        offset = timedelta(hours=hours)
+        start = now - offset - duration
+        stop = start + duration
+        session.add(Timer(task=task, start=start, stop=stop))
+
+    session.flush()
+    start = now - timedelta(hours=24)
+
+    assert len(list(timers_by_timerange(start=start, end=now))) == 22
+
+    for timer in timers_by_timerange(start=start, end=now):
+        assert timer.start > start
+        assert timer.start <= now
+
+
+def test_groups_by_timerange(session):
+
+    session.add(Task(name='even'))
+    session.add(Task(name='odd'))
+    session.flush()
+
+    now = datetime.utcnow()
+    duration = timedelta(hours=1)
+
+    for i, hours in enumerate(range(100, 0, -1)):
+        offset = timedelta(hours=hours)
+        start = now - offset - duration
+        stop = start + duration
+        task = session.query(Task).get(1 if i % 2 == 0 else 2)
+        session.add(Timer(task=task, start=start, stop=stop))
+
+    session.flush()
+    start = now - timedelta(hours=25)
+
+    expected = [('even', timedelta(hours=11)), ('odd', timedelta(hours=12))]
+    assert list(groups_by_timerange(start=start, end=now)) == expected

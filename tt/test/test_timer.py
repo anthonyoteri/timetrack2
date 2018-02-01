@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import pytest
 
 from tt.exc import ValidationError
-from tt.timer import (create, groups_by_timerange, remove, timers,
+from tt.timer import (active, create, groups_by_timerange, remove, timers,
                       timers_by_timerange, update)
 from tt.orm import Task, Timer
 
@@ -188,6 +188,30 @@ def test_remove(session, task):
     remove(1)
 
     assert session.query(Timer).count() == 0
+
+
+def test_active_running(session, task):
+    session.add(task)
+    session.flush()
+
+    session.add(Timer(task=task, start=datetime.utcnow()))
+    session.flush()
+
+    cur = active()
+
+    assert cur is not None
+    assert cur.id == 1
+
+
+def test_active_stopped(session, task):
+    session.add(task)
+    session.flush()
+
+    session.add(
+        Timer(task=task, start=datetime.utcnow(), stop=datetime.utcnow()))
+    session.flush()
+
+    assert active() is None
 
 
 def test_timers(session, task):

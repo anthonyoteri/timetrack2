@@ -81,6 +81,11 @@ def remove(id):
         session.query(Timer).filter(Timer.id == id).delete()
 
 
+def active():
+    with transaction() as session:
+        return session.query(Timer).filter(Timer.stop.is_(None)).one_or_none()
+
+
 def timers():
     with transaction() as session:
         for timer in session.query(Timer).all():

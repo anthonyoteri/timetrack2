@@ -101,7 +101,8 @@ def timers_by_timerange(start, end=datetime.utcnow()):
     with transaction() as session:
         for timer in session.query(Timer).filter(start < Timer.start,
                                                  Timer.start <= end).all():
-            yield timer
+            yield (timer.id, timer.task.name, timer.start, timer.stop,
+                   timer.elapsed)
 
 
 def groups_by_timerange(start, end=datetime.utcnow()):

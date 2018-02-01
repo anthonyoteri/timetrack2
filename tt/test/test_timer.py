@@ -237,9 +237,10 @@ def test_timers_by_timerange(session, task):
 
     assert len(list(timers_by_timerange(start=start, end=now))) == 22
 
-    for timer in timers_by_timerange(start=start, end=now):
-        assert timer.start > start
-        assert timer.start <= now
+    for (t_id, t_task, t_start, t_stop, t_elapsed) in timers_by_timerange(
+            start=start, end=now):
+        assert t_start > start
+        assert t_start <= now
 
 
 def test_groups_by_timerange(session):

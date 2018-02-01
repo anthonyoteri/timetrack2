@@ -1,6 +1,14 @@
 VIRTUALENV ?= env
 PYTHON ?= python3.6
 
+PYTHON_PACKAGE = tt
+LINTER = $(VIRTUALENV)/bin/flake8
+LINTER_OPTS= --exclude=$(VIRTUALENV)
+TESTRUNNER = $(VIRTUALENV)/bin/py.test
+TESTRUNNER_OPTS = --verbose -r s --ignore=$(VIRTUALENV)
+COVERAGE = $(TESTRUNNER)
+COVERAGE_OPTS = --ignore=$(VIRTUALENV) --cov=$(PYTHON_PACKAGE)
+
 all: build
 
 
@@ -11,21 +19,26 @@ $(VIRTUALENV):
 	virtualenv $(VIRTUALENV) --python=$(PYTHON)
 	$(VIRTUALENV)/bin/pip install -r requirements.txt
 
-$(VIRTUALENV)/bin/flake8: $(VIRTUALENV)
-	$(VIRTUALENV)/bin/pip install flake8
+$(LINTER): $(VIRTUALENV)
+	$(VIRTUALENV)/bin/pip install -r requirements-lint.txt
 
 .PHONY: check
-check: $(VIRTUALENV) $(VIRTUALENV)/bin/flake8
-	$(VIRTUALENV)/bin/flake8 tt
+check: $(VIRTUALENV) $(LINTER)
+	$(LINTER) $(LINTER_OPTS) $(PYTHON_PACKAGE)
 
-$(VIRTUALENV)/bin/py.test: $(VIRTUALENV)
-	$(VIRTUALENV)/bin/pip install pytest
+$(TESTRUNNER): $(VIRTUALENV)
+	$(VIRTUALENV)/bin/pip install -r requirements-test.txt
 
-test: build $(VIRTUALENV)/bin/py.test
-	$(VIRTUALENV)/bin/py.test --verbose tt
+test: build $(TESTRUNNER)
+	$(TESTRUNNER) $(TESTRUNNER_OPTS) $(tests)
+
+.PHONY: coverage
+
+coverage: build $(COVERAGE)
+	$(COVERAGE) $(COVERAGE_OPTS) $(tests)
 
 .PHONY: clean
 clean:
-	rm -rf $(VIRTUALENV) build dist *egg-info*
+	rm -rf $(VIRTUALENV) build dist *egg-info* .coverage
 	find . -name '*.py[co]' -delete
 	

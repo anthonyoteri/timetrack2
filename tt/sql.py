@@ -41,14 +41,6 @@ class _Base(object):
 Base = declarative_base(cls=_Base)
 
 
-def transactional(fn):
-    def inner(*args, **kwargs):
-        with transaction() as tx:
-            fn(tx, *args, **kwargs)
-
-    return inner
-
-
 @contextlib.contextmanager
 def transaction():
     session = Session()

@@ -2,5 +2,9 @@
 # All rights reserved.
 
 
+class ParseError(Exception):
+    pass
+
+
 class ValidationError(Exception):
     pass

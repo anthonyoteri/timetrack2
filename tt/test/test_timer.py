@@ -33,6 +33,15 @@ def test_create(session, task):
     assert timer.running
 
 
+def test_create_start_in_the_future_raises(session, task):
+    session.add(task)
+    session.flush()
+
+    start = datetime.utcnow() + timedelta(hours=1)
+    with pytest.raises(ValidationError):
+        create(task=task.name, start=start)
+
+
 def test_create_invalid_task_raises(session):
 
     assert session.query(Task).filter(Task.name == 'bad').count() == 0

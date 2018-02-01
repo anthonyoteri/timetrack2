@@ -47,7 +47,7 @@ def transaction():
     try:
         yield session
         session.commit()
-    except Exception as err:
+    except Exception:
         session.rollback()
         raise
     finally:

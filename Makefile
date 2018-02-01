@@ -24,20 +24,25 @@ build: $(VIRTUALENV)
 $(VIRTUALENV):
 	virtualenv $(VIRTUALENV) --python=$(PYTHON)
 	$(VIRTUALENV)/bin/pip install -r requirements.txt
+	$(VIRTUALENV)/bin/pip install -e .
 
-$(LINTER): $(VIRTUALENV)
-	$(VIRTUALENV)/bin/pip install -r requirements-lint.txt
 
 .PHONY: check
-check: $(VIRTUALENV) $(LINTER)
+check: $(VIRTUALENV)
+	$(VIRTUALENV)/bin/pip install -r requirements-lint.txt
+	$(VIRTUALENV)/bin/pip install -e .
 	$(LINTER) $(LINTER_OPTS) $(PYTHON_PACKAGE)
 
 test: build 
+	$(VIRTUALENV)/bin/pip install -r requirements-test.txt
+	$(VIRTUALENV)/bin/pip install -e .
 	$(TESTRUNNER) $(TESTRUNNER_OPTS)
 
 .PHONY: coverage
 
 coverage: build 
+	$(VIRTUALENV)/bin/pip install -r requirements-test.txt
+	$(VIRTUALENV)/bin/pip install -e .
 	$(COVERAGE) $(COVERAGE_OPTS)
 
 .PHONY: clean

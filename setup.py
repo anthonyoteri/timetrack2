@@ -16,6 +16,7 @@ tests_require = [
     'python-coveralls',
     'pytest',
     'pytest-cov',
+    'pytest-mock',
 ]
 
 console_scripts = [

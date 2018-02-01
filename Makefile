@@ -5,16 +5,7 @@ PYTHON_PACKAGE = tt
 LINTER = $(VIRTUALENV)/bin/flake8
 LINTER_OPTS= --exclude=$(VIRTUALENV)
 TESTRUNNER = $(VIRTUALENV)/bin/python setup.py test
-TESTRUNNER_OPTS = --addopts "--ignore=$(VIRTUALENV) $(tests)"
-COVERAGE = $(TESTRUNNER)
-COVERAGE_OPTS = --addopts "--ignore=$(VIRTUALENV) \
-		--cov=$(PYTHON_PACKAGE) \
-		--cov-report=html \
-		--cov-report=xml \
-		--cov-report=term \
-		--junitxml=junitxml-result.xml \
-		$(tests)"
-
+TESTRUNNER_OPTS = --addopts "--ignore=$(VIRTUALENV)"
 all: build
 
 
@@ -37,13 +28,6 @@ test: build
 	$(VIRTUALENV)/bin/pip install -r requirements-test.txt
 	$(VIRTUALENV)/bin/pip install -e .
 	$(TESTRUNNER) $(TESTRUNNER_OPTS)
-
-.PHONY: coverage
-
-coverage: build 
-	$(VIRTUALENV)/bin/pip install -r requirements-test.txt
-	$(VIRTUALENV)/bin/pip install -e .
-	$(COVERAGE) $(COVERAGE_OPTS)
 
 .PHONY: clean
 clean:

@@ -58,6 +58,16 @@ class TimerService(object):
         if last is not None:
             tt.timer.update(last.id, stop=timestamp)
 
+    def summary(self, range_begin=None, range_end=None):
+        for task, elapsed in tt.timer.groups_by_timerange(
+                start=range_begin, end=range_end):
+            yield task, elapsed
+
+    def records(self, range_begin=None, range_end=None):
+        for id, task, start, stop, elapsed in tt.timer.timers_by_timerange(
+                start=range_begin, end=range_end):
+            yield id, task, start, stop, elapsed
+
     def _parse_timestamp(self, timestamp_in):
         timestamp_out = dateparser.parse(
             timestamp_in,

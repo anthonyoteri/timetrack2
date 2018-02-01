@@ -13,6 +13,7 @@ setup_requires= [
 ]
 
 tests_require = [
+    'python-coveralls',
     'pytest',
     'pytest-cov',
 ]

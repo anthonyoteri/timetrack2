@@ -5,7 +5,7 @@ PYTHON_PACKAGE = tt
 LINTER = $(VIRTUALENV)/bin/flake8
 LINTER_OPTS= --exclude=$(VIRTUALENV)
 TESTRUNNER = $(VIRTUALENV)/bin/python setup.py test
-TESTRUNNER_OPTS = --addopts "--verbose -r s --ignore=$(VIRTUALENV) $(tests)"
+TESTRUNNER_OPTS = --addopts "--ignore=$(VIRTUALENV) $(tests)"
 COVERAGE = $(TESTRUNNER)
 COVERAGE_OPTS = --addopts "--ignore=$(VIRTUALENV) \
 		--cov=$(PYTHON_PACKAGE) \

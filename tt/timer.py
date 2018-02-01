@@ -1,215 +1,125 @@
 # Copyright (C) 2018, Anthony Oteri
 # All rights reserved.
 
-import collections
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 
-import humanfriendly
-import dateparser
-from sqlalchemy import Column, DateTime, ForeignKey, Integer
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import relationship
-from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
+from sqlalchemy.orm.exc import NoResultFound
 
-from tt.db import Base, transaction, transactional
-from tt.task import Task
+from tt.exc import ValidationError
+from tt.orm import Task, Timer
+from tt.sql import transaction
 
 log = logging.getLogger(__name__)
 
-# Limit on the number of active timers
-# TODO: Make this configurable
-ACTIVE_TIMER_LIMIT = 1
 
-# TODO: Make this configurable
-DATEPARSER_SETTINGS = {'TO_TIMEZONE': 'UTC', 'RETURN_AS_TIMEZONE_AWARE': False}
+def create(task, start):
+    """Creat a timer for the given task.
 
+    :param str task: The name of an existing task.
+    :param datetime.datetime start: The start time.
+    """
 
-class TimerLimitExceeded(AssertionError):
-    pass
-
-
-class Timer(Base):
-    __tablename__ = 'timer'
-    id = Column(Integer, primary_key=True)
-    start_time = Column(DateTime)
-    task_id = Column(
-        Integer, ForeignKey('task.id'), nullable=False, unique=True)
-
-    task = relationship("Task", back_populates="timers")
-
-    def __repr__(self):
-        return '<Timer(id=%s, task=%s, start_time=%s)>' % (self.id, self.task,
-                                                           self.start_time)
-
-
-class TimeRecord(Base):
-    __tablename__ = 'time_record'
-    id = Column(Integer, primary_key=True)
-    start_time = Column(DateTime, nullable=False)
-    stop_time = Column(DateTime, nullable=False)
-
-    task_id = Column(Integer, ForeignKey('task.id'), nullable=False)
-    task = relationship("Task", back_populates="records")
-
-    def __repr__(self):
-        return '<TimeRecord(id=%s, task=%s, start_time=%s, stop_time=%s)>' % (
-            self.id, self.task, self.start_time, self.stop_time)
-
-
-def start(task, timestamp):
-    try:
-        with transaction() as session:
-
-            _enforce_active_timer_limit(session)
-
+    with transaction() as session:
+        try:
             task = session.query(Task).filter(Task.name == task).one()
-            timestamp = timestamp.replace(microsecond=0)
+        except NoResultFound:
+            raise ValidationError("Invalid task %s" % task)
 
-            timer = Timer(task=task, start_time=timestamp)
+        for active in session.query(Timer).filter(Timer.stop.is_(None)).all():
+            active.stop = start
+
+        try:
+            timer = Timer(task=task, start=start)
+            _validate(timer)
             session.add(timer)
-    except IntegrityError:
-        log.error('A timer for this task is already running')
-        return
+        except AssertionError as err:
+            raise ValidationError(err)
 
 
-def _enforce_active_timer_limit(session):
-    active_count = session.query(Timer).count()
-    if active_count >= ACTIVE_TIMER_LIMIT:
-        raise TimerLimitExceeded("Too many running timers %d, limit %d" %
-                                 (active_count, ACTIVE_TIMER_LIMIT))
-
-
-def _find_timer_by_id_or_task(session, id_or_task):
-    try:
-        timer = session.query(Timer).get(int(id_or_task))
-    except ValueError:
+def update(id, task=None, start=None, stop=None):
+    with transaction() as session:
         try:
-            task = session.query(Task).filter(Task.name == id_or_task).one()
-        except NoResultFound:
-            log.error("Invalid task %s" % id_or_task)
-            return None
-        try:
-            timer = session.query(Timer).filter(Timer.task == task).one()
-        except MultipleResultsFound:
-            log.warn('Multiple timers found for task %s, use id instead',
-                     id_or_task)
-            return None
-        except NoResultFound:
-            log.warn('No timer found with task %s', id_or_task)
-            return None
+            timer = session.query(Timer).get(id)
 
-    return timer
+            if task is not None:
+                try:
+                    task = session.query(Task).filter(Task.name == task).one()
+                except NoResultFound:
+                    raise ValidationError("No such task %s" % task)
+                timer.task = task
 
+            if start is not None:
+                timer.start = start
 
-@transactional
-def stop(session, t, timestamp):
-    timer = _find_timer_by_id_or_task(session, t)
-    if timer is None:
-        log.error("Timer not found")
-        return
+            if stop is not None:
+                timer.stop = stop
 
-    timestamp = timestamp.replace(microsecond=0)
+            _validate(timer)
 
-    record = TimeRecord(
-        task=timer.task, start_time=timer.start_time, stop_time=timestamp)
-    session.add(record)
-    session.delete(timer)
+        except AssertionError as err:
+            raise ValidationError("Invalid timer %s: %s" % (timer, err))
 
 
-@transactional
-def cancel(session, t):
-    timer = _find_timer_by_id_or_task(session, t)
-    if timer is None:
-        log.error("Timer not found")
-        return
+def _validate(timer):
+    """Validate time constraints on a timer.
 
-    session.delete(timer)
+    The following conditions must hold true:
 
+        * The start time must be in the past
+        * If there is a stop time, it must be in the past
+        * If there is a stop time, the start time must come first
 
-@transactional
-def update_task(session, t, value):
-    timer = _find_timer_by_id_or_task(session, t)
-    if timer is None:
-        log.error("Timer not found")
-        return
+    Raises AssertionError: If any of the above conditions are not met.
+    """
 
-    try:
-        task = session.query(Task).filter(Task.name == value).one()
-    except NoResultFound:
-        log.error('Invalid task %s' % value)
-        return
-
-    timer.task = task
+    now = datetime.utcnow()
+    if timer.running:
+        assert timer.start < now, "Start time in the future"
+    else:
+        assert timer.start < timer.stop, "Start time after stop time"
+        assert timer.stop <= now, "Stop time in the future"
 
 
-@transactional
-def update_start(session, t, value):
-    timer = _find_timer_by_id_or_task(session, t)
-    if timer is None:
-        log.error("Timer not found")
-        return
-
-    timestamp = dateparser.parse(
-        value, settings=DATEPARSER_SETTINGS).replace(microsecond=0)
-
-    if timestamp > datetime.utcnow():
-        log.error("Cannot change start time in the future")
-        return
-
-    timer.start_time = timestamp
+def remove(id):
+    with transaction() as session:
+        session.query(Timer).filter(Timer.id == id).delete()
 
 
-@transactional
-def timers(session):
-
-    format_string = "| %4s | %15s | %19s | %29s |"
-
-    print('+' + "-" * 78 + '+')
-    print(format_string % ("ID", "TASK", "START TIME", "ELAPSED"))
-    print('+' + "=" * 78 + '+')
-    for timer in session.query(Timer).all():
-        elapsed = datetime.utcnow().replace(microsecond=0) - timer.start_time
-        print(format_string %
-              (timer.id, timer.task.name, timer.start_time,
-               humanfriendly.format_timespan(elapsed.total_seconds())))
-
-    print('+' + "-" * 78 + '+')
+def active():
+    with transaction() as session:
+        return session.query(Timer).filter(Timer.stop.is_(None)).one_or_none()
 
 
-@transactional
-def history(session):
-    format_string = "| %4s | %15s | %19s | %29s |"
-
-    print('+' + "-" * 78 + '+')
-    print(format_string % ("ID", "TASK", "START TIME", "TOTAL"))
-    print('+' + "=" * 78 + '+')
-    for record in session.query(TimeRecord).all():
-        total = record.stop_time - record.start_time
-        print(format_string %
-              (record.id, record.task.name, record.start_time,
-               humanfriendly.format_timespan(total.total_seconds())))
-
-    print('+' + "-" * 78 + '+')
+def timers():
+    with transaction() as session:
+        for timer in session.query(Timer).all():
+            yield timer
 
 
-@transactional
-def summarize(session):
+def timers_by_timerange(start, end=datetime.utcnow()):
+    with transaction() as session:
+        for timer in session.query(Timer).filter(start < Timer.start,
+                                                 Timer.start <= end).all():
+            yield timer
 
-    summary = collections.defaultdict(int)
-    for record in session.query(TimeRecord).all():
-        elapsed = record.stop_time - record.start_time
-        summary[record.task.name] += elapsed.total_seconds()
 
-    format_string = "| %22s | %51s |"
-    print('+' + "-" * 78 + '+')
-    print(format_string % ("TASK", "TOTAL"))
-    print('+' + "=" * 78 + '+')
-    for task, elapsed in summary.items():
-        print(format_string % (task, humanfriendly.format_timespan(elapsed)))
-    print('+' + "-" * 78 + '+')
+def groups_by_timerange(start, end=datetime.utcnow()):
 
-    print(format_string %
-          ('TOTAL', humanfriendly.format_timespan(sum(summary.values()))))
+    with transaction() as session:
 
-    print('+' + "-" * 78 + '+')
+        tasks = [
+            t[0]
+            for t in session.query(Timer.task_id).filter(
+                start < Timer.start, Timer.start <= end).distinct(
+                    Timer.task_id).order_by(Timer.task_id).all()
+        ]
+
+        for task_id in tasks:
+            timers = session.query(Timer).filter(
+                start < Timer.start, Timer.start <= end,
+                Timer.task_id == task_id).all()
+            task_name = timers[0].task.name
+            elapsed = timedelta(
+                seconds=sum(t.elapsed.total_seconds() for t in timers))
+            yield task_name, elapsed

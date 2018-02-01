@@ -3,47 +3,34 @@
 
 import logging
 
-from sqlalchemy import Column, Integer, String
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import relationship
 from sqlalchemy.orm.exc import NoResultFound
 
-from tt.db import Base, transaction, transactional
+from tt.exc import ValidationError
+from tt.orm import Task
+from tt.sql import transaction
 
 log = logging.getLogger(__name__)
-
-
-class Task(Base):
-    __tablename__ = 'task'
-    id = Column(Integer, primary_key=True)
-    name = Column(String(255), nullable=False, unique=True)
-
-    timers = relationship("Timer", back_populates="task")
-    records = relationship("TimeRecord", back_populates="task")
-
-    def __repr__(self):
-        return "<Task(id={}, name={})>".format(self.id, self.name)
 
 
 def create(name):
     log.debug('creating task with name %s', name)
 
+    if name == "":
+        raise ValidationError("Cannot use empty name")
+
     try:
         with transaction() as session:
             task = Task(name=name)
             session.add(task)
-    except IntegrityError as err:
-        log.warning("A task with name %s already exists" % name)
-        return
+    except IntegrityError:
+        raise ValidationError("A task with name %s already exists" % name)
 
 
-@transactional
-def list(session):
-    log.debug('listing tasks')
-
-    print("All tasks:")
-    for task in session.query(Task).all():
-        print("  %s" % task.name)
+def tasks():
+    with transaction() as session:
+        for task in session.query(Task).all():
+            yield task
 
 
 def remove(name):
@@ -54,15 +41,8 @@ def remove(name):
             try:
                 task = session.query(Task).filter(Task.name == name).one()
             except NoResultFound:
-                log.error('no such task with name %s', name)
-                return
+                raise ValidationError('no such task with name %s', name)
 
-            if not task.timers:
-                session.delete(task)
-            else:
-                log.error('task %s has %d active timers' % (task.name,
-                                                            len(task.timers)))
-                return
+            session.delete(task)
     except IntegrityError:
-        log.error("Can not remove a task with existing records")
-        return
+        raise ValidationError("Can not remove a task with existing records")

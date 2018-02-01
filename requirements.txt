@@ -1,15 +1,2 @@
-# Current Project
-
--e .
-
-# Third-party deps
-
 dateparser==0.6.0
-humanfriendly==4.5
-python-dateutil==2.6.1
-pytz==2017.3
-regex==2018.1.10
-ruamel.yaml==0.15.35
-six==1.11.0
-SQLAlchemy==1.2.0
-tzlocal==1.5.1
+SQLAlchemy==1.2.2

@@ -1,0 +1,25 @@
+language: python
+
+matrix:
+  fast_finish: true
+  allow_failures:
+    - python: nightly
+
+python:
+  - "2.7"
+  - "3.4"
+  - "3.5"
+  - "3.6"
+  - "nightly"
+
+install:
+  - pip install -r requirements.txt
+  - pip install -r requirements-test.txt
+  - pip install -r requirements-lint.txt
+  - pip install -e .
+
+script:
+  - python setup.py test
+
+after_success:
+  - coveralls

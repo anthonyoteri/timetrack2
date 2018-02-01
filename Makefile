@@ -4,15 +4,16 @@ PYTHON ?= python3.6
 PYTHON_PACKAGE = tt
 LINTER = $(VIRTUALENV)/bin/flake8
 LINTER_OPTS= --exclude=$(VIRTUALENV)
-TESTRUNNER = $(VIRTUALENV)/bin/py.test
-TESTRUNNER_OPTS = --verbose -r s --ignore=$(VIRTUALENV)
+TESTRUNNER = $(VIRTUALENV)/bin/python setup.py test
+TESTRUNNER_OPTS = --addopts "--verbose -r s --ignore=$(VIRTUALENV) $(tests)"
 COVERAGE = $(TESTRUNNER)
-COVERAGE_OPTS = --ignore=$(VIRTUALENV) \
+COVERAGE_OPTS = --addopts "--ignore=$(VIRTUALENV) \
 		--cov=$(PYTHON_PACKAGE) \
 		--cov-report=html \
 		--cov-report=xml \
 		--cov-report=term \
-		--junitxml=junitxml-result.xml
+		--junitxml=junitxml-result.xml \
+		$(tests)"
 
 all: build
 
@@ -31,16 +32,13 @@ $(LINTER): $(VIRTUALENV)
 check: $(VIRTUALENV) $(LINTER)
 	$(LINTER) $(LINTER_OPTS) $(PYTHON_PACKAGE)
 
-$(TESTRUNNER): $(VIRTUALENV)
-	$(VIRTUALENV)/bin/pip install -r requirements-test.txt
-
-test: build $(TESTRUNNER)
-	$(TESTRUNNER) $(TESTRUNNER_OPTS) $(tests)
+test: build 
+	$(TESTRUNNER) $(TESTRUNNER_OPTS)
 
 .PHONY: coverage
 
-coverage: build $(COVERAGE)
-	$(COVERAGE) $(COVERAGE_OPTS) $(tests)
+coverage: build 
+	$(COVERAGE) $(COVERAGE_OPTS)
 
 .PHONY: clean
 clean:

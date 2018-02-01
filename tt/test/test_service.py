@@ -23,11 +23,22 @@ def test_add_task(session, task_service):
     assert session.query(Task).filter(Task.name == 'foo').count() == 1
 
 
+def test_add_task_raises_validation_error(session, task_service):
+    task_service.add('foo')
+    with pytest.raises(ValidationError):
+        task_service.add('foo')
+
+
 def test_remove_task(session, task_service):
     test_add_task(session, task_service)
 
     task_service.remove('foo')
     assert session.query(Task).filter(Task.name == 'foo').count() == 0
+
+
+def test_remove_task_raises_validation_error(task_service):
+    with pytest.raises(ValidationError):
+        task_service.remove('foo')
 
 
 def test_list_tasks(session, task_service):

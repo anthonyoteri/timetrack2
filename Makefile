@@ -7,7 +7,12 @@ LINTER_OPTS= --exclude=$(VIRTUALENV)
 TESTRUNNER = $(VIRTUALENV)/bin/py.test
 TESTRUNNER_OPTS = --verbose -r s --ignore=$(VIRTUALENV)
 COVERAGE = $(TESTRUNNER)
-COVERAGE_OPTS = --ignore=$(VIRTUALENV) --cov=$(PYTHON_PACKAGE)
+COVERAGE_OPTS = --ignore=$(VIRTUALENV) \
+		--cov=$(PYTHON_PACKAGE) \
+		--cov-report=html \
+		--cov-report=xml \
+		--cov-report=term \
+		--junitxml=junitxml-result.xml
 
 all: build
 
@@ -40,5 +45,6 @@ coverage: build $(COVERAGE)
 .PHONY: clean
 clean:
 	rm -rf $(VIRTUALENV) build dist *egg-info* .coverage
+	rm -rf coverage.xml htmlcov junitxml-result.xml
 	find . -name '*.py[co]' -delete
 	

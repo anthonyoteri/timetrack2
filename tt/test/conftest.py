@@ -5,7 +5,7 @@ import logging
 
 import pytest
 
-from tt.sql import connect_test, transaction
+from tt.sql import connect, transaction
 
 
 @pytest.fixture(scope='module')
@@ -17,7 +17,7 @@ def log():
 
 @pytest.yield_fixture
 def session(log):
-    connect_test()
+    connect(db_url="sqlite:///", echo=False)
 
     with transaction() as session:
         yield session

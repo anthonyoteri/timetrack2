@@ -114,15 +114,17 @@ def do_remove(args):
 
 
 def do_start(args):
-    log.info('starting timer on task %s %s', args.task, args.time)
+    time = _parse_timestamp(args.time)
+    log.info('starting timer on task %s %s', args.task, time)
     service = TimerService()
-    service.start(task=args.task, timestamp=args.time)
+    service.start(task=args.task, timestamp=time)
 
 
 def do_stop(args):
-    log.info('stopping current timer %s', args.time)
+    time = _parse_timestamp(args.time)
+    log.info('stopping current timer %s', time)
     service = TimerService()
-    service.stop(timestamp=args.time)
+    service.stop(timestamp=time)
 
 
 def do_summary(args):

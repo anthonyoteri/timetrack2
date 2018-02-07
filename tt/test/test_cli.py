@@ -73,26 +73,43 @@ def test_remove(options, mocker, task_service):
 
 
 @pytest.mark.parametrize('options', [
-    ['start', 'foo', 'now'],
+    ['start', 'foo', 'one day ago'],
     ['start', 'foo'],
 ])
-def test_start(options, mocker, timer_service):
+@mock.patch('dateparser.parse')
+def test_start(parse, options, mocker, timer_service):
+
+    timestamp = mocker.Mock()
+    parse.return_value = timestamp
+
     tt.cli.main(options)
-    try:
-        timer_service.start.assert_called_with(
-            task=options[1], timestamp=options[2])
-    except IndexError:
-        timer_service.start.assert_called_with(
-            task=options[1], timestamp='now')
+
+    if len(options) == 3:
+        parse.assert_called_with(
+            options[2], settings=tt.cli.DATEPARSER_SETTINGS)
+    else:
+        parse.assert_called_with('now', settings=tt.cli.DATEPARSER_SETTINGS)
+
+    timer_service.start.assert_called_with(
+        task=options[1], timestamp=timestamp.replace())
 
 
 @pytest.mark.parametrize('options', [['stop', 'now'], ['stop']])
-def test_stop(options, mocker, timer_service):
+@mock.patch('dateparser.parse')
+def test_stop(parse, options, mocker, timer_service):
+
+    timestamp = mocker.Mock()
+    parse.return_value = timestamp
+
     tt.cli.main(options)
-    try:
-        timer_service.stop.assert_called_with(timestamp=options[1])
-    except IndexError:
-        timer_service.stop.assert_called_with(timestamp='now')
+
+    if len(options) == 2:
+        parse.assert_called_with(
+            options[1], settings=tt.cli.DATEPARSER_SETTINGS)
+    else:
+        parse.assert_called_with('now', settings=tt.cli.DATEPARSER_SETTINGS)
+
+    timer_service.stop.assert_called_with(timestamp=timestamp.replace())
 
 
 @pytest.mark.parametrize(

@@ -33,6 +33,6 @@ class Timer(Base):
     @property
     def elapsed(self):
         if self.running:
-            return datetime.utcnow() - self.start
+            return datetime.utcnow().replace(microsecond=0) - self.start
         else:
             return self.stop - self.start

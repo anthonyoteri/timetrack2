@@ -6,6 +6,7 @@ import logging
 import sys
 
 import dateparser
+from tabulate import tabulate
 
 from tt.exc import ParseError
 from tt.sql import connect
@@ -16,6 +17,8 @@ log = logging.getLogger('tt.cli')
 DEFAULT_REPORT_START = "monday at midnight UTC"
 DEFAULT_REPORT_END = "now"
 DATEPARSER_SETTINGS = {'TO_TIMEZONE': 'UTC', 'RETURN_AS_TIMEZONE_AWARE': False}
+DEFAULT_TABLE_FORMAT = 'simple'
+DEFAULT_TABLE_HEADER_FORMATTER = str.capitalize
 
 
 def main(argv=sys.argv[1:]):
@@ -102,9 +105,9 @@ def do_tasks(args):
     log.info('list tasks')
     service = TaskService()
 
-    print('All Tasks')
-    for task in service.list():
-        print("  %s" % task)
+    table = [[t] for t in service.list()]
+    headers = _format_headers(['task'])
+    print(_make_table(table, headers=headers))
 
 
 def do_remove(args):
@@ -114,15 +117,17 @@ def do_remove(args):
 
 
 def do_start(args):
-    log.info('starting timer on task %s %s', args.task, args.time)
+    time = _parse_timestamp(args.time)
+    log.info('starting timer on task %s %s', args.task, time)
     service = TimerService()
-    service.start(task=args.task, timestamp=args.time)
+    service.start(task=args.task, timestamp=time)
 
 
 def do_stop(args):
-    log.info('stopping current timer %s', args.time)
+    time = _parse_timestamp(args.time)
+    log.info('stopping current timer %s', time)
     service = TimerService()
-    service.stop(timestamp=args.time)
+    service.stop(timestamp=time)
 
 
 def do_summary(args):
@@ -131,10 +136,9 @@ def do_summary(args):
     log.info('presenting summary from %s to %s', begin, end)
 
     service = TimerService()
-    print("Summary from %s to %s" % (args.begin, args.end))
-
-    for task, elapsed in service.summary(range_begin=begin, range_end=end):
-        print("  %s %s" % (task, elapsed))
+    headers = _format_headers(['task', 'elapsed'])
+    table = service.summary(range_begin=begin, range_end=end)
+    print(_make_table(table, headers=headers))
 
 
 def do_records(args):
@@ -143,11 +147,20 @@ def do_records(args):
     log.info('presenting records from %s to %s', begin, end)
 
     service = TimerService()
-    print("Records from %s to %s" % (args.begin, args.end))
 
-    for id, task, start, stop, elapsed in service.records(
-            range_begin=begin, range_end=end):
-        print(" %s %s %s %s %s" % (id, task, start, stop, elapsed))
+    headers = _format_headers(['id', 'task', 'start', 'stop', 'elapsed'])
+    table = service.records(range_begin=begin, range_end=end)
+    print(_make_table(table, headers=headers))
+
+
+def _make_table(rows, headers):
+    return tabulate(
+        rows, headers=_format_headers(headers), tablefmt=DEFAULT_TABLE_FORMAT)
+
+
+def _format_headers(headers, formatter=str.capitalize):
+    for h in headers:
+        yield formatter(h)
 
 
 def _parse_timestamp(timestamp_in):

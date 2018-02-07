@@ -19,7 +19,7 @@ def task(session):
 def test_create(session, task):
     session.add(task)
 
-    start = datetime.utcnow() - timedelta(hours=1)
+    start = datetime.utcnow().replace(microsecond=0) - timedelta(hours=1)
     create(task=task.name, start=start)
 
     assert session.query(Timer).count() == 1

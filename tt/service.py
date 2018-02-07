@@ -1,11 +1,10 @@
 # Copyright (C) 2018, Anthony Oteri
 # All rights reserved.
 
+from datetime import datetime
 import logging
 
-import dateparser
-
-from tt.exc import ParseError, ValidationError
+from tt.exc import ValidationError
 import tt.task
 import tt.timer
 
@@ -39,8 +38,7 @@ class TaskService(object):
 
 
 class TimerService(object):
-    def start(self, task, timestamp="now"):
-        timestamp = self._parse_timestamp(timestamp)
+    def start(self, task, timestamp=datetime.utcnow()):
         log.debug("Starting new timer for %s at %s", task, timestamp)
 
         try:
@@ -50,8 +48,7 @@ class TimerService(object):
                       timestamp, err)
             raise
 
-    def stop(self, timestamp="now"):
-        timestamp = self._parse_timestamp(timestamp)
+    def stop(self, timestamp=datetime.utcnow()):
         log.debug("Stopping last active timer at %s", timestamp)
 
         last = tt.timer.active()
@@ -67,16 +64,3 @@ class TimerService(object):
         for id, task, start, stop, elapsed in tt.timer.timers_by_timerange(
                 start=range_begin, end=range_end):
             yield id, task, start, stop, elapsed
-
-    def _parse_timestamp(self, timestamp_in):
-        timestamp_out = dateparser.parse(
-            timestamp_in,
-            settings={
-                'TO_TIMEZONE': 'UTC',
-                'RETURN_AS_TIMEZONE_AWARE': False
-            })
-
-        if timestamp_out is None:
-            raise ParseError("Unable to parse %s" % timestamp_in)
-
-        return timestamp_out.replace(microsecond=0)

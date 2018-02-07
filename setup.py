@@ -8,7 +8,7 @@ install_requires = [
     'SQLALchemy',
 ]
 
-setup_requires= [
+setup_requires = [
     'pytest-runner',
 ]
 
@@ -20,12 +20,12 @@ tests_require = [
 ]
 
 console_scripts = [
-    't2 = tt.cli:main',
+    'tt = tt.cli:main',
 ]
 
 setup(name='timetrack2',
-      version='0.0.0',
-      description='Project based time tracking',
+      version='1.0.0',
+      description='Simple time tracker',
       author='Anthony Oteri',
       author_email='anthony.oteri@gmail.com',
       packages=find_packages(),

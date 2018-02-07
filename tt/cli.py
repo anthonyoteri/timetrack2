@@ -2,17 +2,23 @@
 # All rights reserved
 
 import argparse
-from datetime import datetime
 import logging
+import sys
 
+import dateparser
+
+from tt.exc import ParseError
 from tt.sql import connect
-import tt.task
-import tt.timer
+from tt.service import TaskService, TimerService
 
 log = logging.getLogger('tt.cli')
 
+DEFAULT_REPORT_START = "monday at midnight UTC"
+DEFAULT_REPORT_END = "now"
+DATEPARSER_SETTINGS = {'TO_TIMEZONE': 'UTC', 'RETURN_AS_TIMEZONE_AWARE': False}
 
-def main():
+
+def main(argv=sys.argv[1:]):
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-v', '--verbose', action='store_true')
@@ -36,39 +42,46 @@ def main():
 
     start_parser = subparsers.add_parser('start')
     start_parser.add_argument('task', help='Task name')
+    start_parser.add_argument(
+        'time', help='timestamp', default='now', nargs='?')
     start_parser.set_defaults(func=do_start)
 
     stop_parser = subparsers.add_parser('stop')
-    stop_parser.add_argument('timer', help="Timer ID or Task Name")
+    stop_parser.add_argument(
+        'time', help='timestamp', default='now', nargs='?')
     stop_parser.set_defaults(func=do_stop)
 
-    cancel_parser = subparsers.add_parser('cancel')
-    cancel_parser.add_argument('timer', help='Timer ID or Task Name')
-    cancel_parser.set_defaults(func=do_cancel)
+    summary_parser = subparsers.add_parser('summary')
+    summary_parser.add_argument(
+        '--begin',
+        default=DEFAULT_REPORT_START,
+        help='Timestamp for start of reporting period (inclusive)')
+    summary_parser.add_argument(
+        '--end',
+        default=DEFAULT_REPORT_END,
+        help='Timestamp for end of reporting period (exclusive)')
+    summary_parser.set_defaults(func=do_summary)
 
-    update_parser = subparsers.add_parser('update')
-    update_parser.add_argument('timer', help='Timer ID or Task Name')
-    update_command_group = update_parser.add_mutually_exclusive_group(
-        required=True)
-    update_command_group.add_argument('--task', action='store_true')
-    update_command_group.add_argument('--start', action='store_true')
-    update_parser.add_argument('value')
-    update_parser.set_defaults(func=do_update)
+    records_parser = subparsers.add_parser('records')
+    records_parser.add_argument(
+        '--begin',
+        default=DEFAULT_REPORT_START,
+        help='Timestamp for start of reporting period (inclusive)')
+    records_parser.add_argument(
+        '--end',
+        default=DEFAULT_REPORT_END,
+        help='Timestamp for end of reporting period (exclusive)')
+    records_parser.set_defaults(func=do_records)
 
-    timers_parser = subparsers.add_parser('timers')
-    timers_parser.set_defaults(func=do_timers)
-
-    history_parser = subparsers.add_parser('history')
-    history_parser.set_defaults(func=do_history)
-
-    summarize_parser = subparsers.add_parser('summary')
-    summarize_parser.set_defaults(func=do_summarize)
-
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     configure_logging(args.verbose)
 
     connect(echo=args.verbose)
-    args.func(args)
+    try:
+        args.func(args)
+    except AttributeError:
+        parser.print_usage()
+        raise SystemExit(1)
 
 
 def configure_logging(verbose=False):
@@ -81,56 +94,72 @@ def configure_logging(verbose=False):
 
 def do_create(args):
     log.info('create task with name %s', args.name)
-    tt.task.create(args.name)
+    service = TaskService()
+    service.add(name=args.name)
 
 
 def do_tasks(args):
     log.info('list tasks')
-    tt.task.list()
+    service = TaskService()
+
+    print('All Tasks')
+    for task in service.list():
+        print("  %s" % task)
 
 
 def do_remove(args):
     log.info('remove task with name %s', args.name)
-    tt.task.remove(args.name)
+    service = TaskService()
+    service.remove(name=args.name)
 
 
 def do_start(args):
-    log.info('start timer')
-    tt.timer.start(args.task, datetime.utcnow())
+    log.info('starting timer on task %s %s', args.task, args.time)
+    service = TimerService()
+    service.start(task=args.task, timestamp=args.time)
 
 
 def do_stop(args):
-    log.info('stop timer')
-    tt.timer.stop(args.timer, datetime.utcnow())
+    log.info('stopping current timer %s', args.time)
+    service = TimerService()
+    service.stop(timestamp=args.time)
 
 
-def do_cancel(args):
-    log.info('cancel timer')
-    tt.timer.cancel(args.timer)
+def do_summary(args):
+    begin = _parse_timestamp(args.begin)
+    end = _parse_timestamp(args.end)
+    log.info('presenting summary from %s to %s', begin, end)
+
+    service = TimerService()
+    print("Summary from %s to %s" % (args.begin, args.end))
+
+    for task, elapsed in service.summary(range_begin=begin, range_end=end):
+        print("  %s %s" % (task, elapsed))
 
 
-def do_update(args):
-    log.info('update timer')
+def do_records(args):
+    begin = _parse_timestamp(args.begin)
+    end = _parse_timestamp(args.end)
+    log.info('presenting records from %s to %s', begin, end)
 
-    if args.task:
-        tt.timer.update_task(args.timer, args.value)
-    elif args.start:
-        tt.timer.update_start(args.timer, args.value)
+    service = TimerService()
+    print("Records from %s to %s" % (args.begin, args.end))
 
-
-def do_timers(args):
-    log.info('show timers')
-    tt.timer.timers()
-
-
-def do_history(args):
-    log.info('show history')
-    tt.timer.history()
+    for id, task, start, stop, elapsed in service.records(
+            range_begin=begin, range_end=end):
+        print(" %s %s %s %s %s" % (id, task, start, stop, elapsed))
 
 
-def do_summarize(args):
-    log.info('show summary')
-    tt.timer.summarize()
+def _parse_timestamp(timestamp_in):
+    timestamp_out = dateparser.parse(
+        timestamp_in,
+        settings=DATEPARSER_SETTINGS,
+    )
+
+    if timestamp_out is None:
+        raise ParseError("Unable to parse %s" % timestamp_in)
+
+    return timestamp_out.replace(microsecond=0)
 
 
 if __name__ == '__main__':

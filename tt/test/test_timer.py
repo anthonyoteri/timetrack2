@@ -7,7 +7,7 @@ import pytest
 
 from tt.exc import ValidationError
 from tt.timer import (active, create, groups_by_timerange, remove, timers,
-                      timers_by_timerange, update)
+                      timers_by_timerange, update, _validate)
 from tt.orm import Task, Timer
 
 
@@ -262,3 +262,36 @@ def test_groups_by_timerange(session):
 
     expected = [('even', timedelta(hours=11)), ('odd', timedelta(hours=12))]
     assert list(groups_by_timerange(start=start, end=now)) == expected
+
+
+@pytest.mark.parametrize('running', [False, True])
+def test_validate(running):
+
+    start = datetime.utcnow() - timedelta(hours=1)
+    stop = start + timedelta(minutes=30)
+
+    t = Timer(start=start, stop=None if running else stop)
+    _validate(t)
+
+
+def test_validate_start_in_future():
+    start = datetime.utcnow() + timedelta(hours=1)
+    with pytest.raises(AssertionError):
+        _validate(Timer(start=start))
+
+
+def test_validate_stop_before_start():
+    start = datetime.utcnow() - timedelta(hours=1)
+    stop = start - timedelta(hours=1)
+
+    with pytest.raises(AssertionError):
+        _validate(Timer(start=start, stop=stop))
+
+
+def test_validate_stop_in_future():
+
+    start = datetime.utcnow() - timedelta(hours=1)
+    stop = start + timedelta(hours=2)
+
+    with pytest.raises(AssertionError):
+        _validate(Timer(start=start, stop=stop))

@@ -158,7 +158,7 @@ def _make_table(rows, headers):
         rows, headers=_format_headers(headers), tablefmt=DEFAULT_TABLE_FORMAT)
 
 
-def _format_headers(headers, formatter=str.capitalize):
+def _format_headers(headers, formatter=DEFAULT_TABLE_HEADER_FORMATTER):
     for h in headers:
         yield formatter(h)
 

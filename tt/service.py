@@ -1,7 +1,7 @@
 # Copyright (C) 2018, Anthony Oteri
 # All rights reserved.
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 
 from tt.exc import ValidationError
@@ -64,3 +64,16 @@ class TimerService(object):
         for id, task, start, stop, elapsed in tt.timer.timers_by_timerange(
                 start=range_begin, end=range_end):
             yield id, task, start, stop, elapsed
+
+    def report_week(self, timestamp=datetime.utcnow()):
+        start = timestamp - timedelta(days=7)
+
+        for weekly_grid in tt.timer.daily_report(start, timestamp):
+            yield weekly_grid
+
+    def report_month(self, timestamp=datetime.utcnow()):
+        start = timestamp.replace(day=1) - timedelta(days=4)
+        end = start + timedelta(days=32)
+
+        for weekly_grid in tt.timer.daily_report(start, end):
+            yield weekly_grid

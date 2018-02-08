@@ -1,11 +1,13 @@
 # Copyright (C) 2018, Anthony Oteri
 # All rights reserved.
 
+import collections
 from datetime import datetime, timedelta
 import logging
 
 from sqlalchemy.orm.exc import NoResultFound
 
+from tt.datetime import days, weeks
 from tt.exc import ValidationError
 from tt.orm import Task, Timer
 from tt.sql import transaction
@@ -124,3 +126,30 @@ def groups_by_timerange(start, end=datetime.utcnow()):
             elapsed = timedelta(
                 seconds=sum(t.elapsed.total_seconds() for t in timers))
             yield task_name, elapsed
+
+
+def daily_report(start, end):
+    table = {}
+    for week_start, week_end in weeks(start, end, tuples=True):
+        table[week_start] = collections.defaultdict(dict)
+        for day_start, day_end in days(
+                week_start, week_end, weekdays=True, tuples=True):
+            for task, elapsed in groups_by_timerange(
+                    start=day_start, end=day_end):
+                table[week_start][task][day_start] = elapsed
+
+    for week_start, week_end in weeks(start, end, tuples=True):
+        grid = []
+        grid.append(
+            ['task'] +
+            [str(d.date()) for d in days(week_start, week_end, weekdays=True)])
+        for task in table[week_start]:
+            col = [task]
+            for day_start, day_end in days(
+                    week_start, week_end, weekdays=True, tuples=True):
+                col.append(table[week_start].get(task, {}).get(day_start))
+
+
+#            col.append(sum(col[1:]))
+            grid.append(col)
+        yield grid

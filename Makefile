@@ -5,7 +5,7 @@ PYTHON_PACKAGE = tt
 LINTER = $(VIRTUALENV)/bin/flake8
 LINTER_OPTS= --exclude=$(VIRTUALENV)
 TESTRUNNER = $(VIRTUALENV)/bin/python setup.py test
-TESTRUNNER_OPTS = --addopts "--ignore=$(VIRTUALENV)"
+TESTRUNNER_OPTS = --addopts "--ignore=$(VIRTUALENV) -vv"
 all: build
 
 

@@ -76,6 +76,11 @@ def main(argv=sys.argv[1:]):
         help='Timestamp for end of reporting period (exclusive)')
     records_parser.set_defaults(func=do_records)
 
+    report_parser = subparsers.add_parser('report')
+    report_parser.add_argument('--week', action='store_true')
+    report_parser.add_argument('--month', action='store_true')
+    report_parser.set_defaults(func=do_report)
+
     args = parser.parse_args(argv)
     configure_logging(args.verbose)
 
@@ -151,6 +156,20 @@ def do_records(args):
     headers = _format_headers(['id', 'task', 'start', 'stop', 'elapsed'])
     table = service.records(range_begin=begin, range_end=end)
     print(_make_table(table, headers=headers))
+
+
+def do_report(args):
+
+    service = TimerService()
+
+    func = service.report_week
+    if args.month:
+        func = service.report_month
+
+    for weekly in func():
+        headers = _format_headers(weekly[0])
+        table = weekly[1:]
+        print(_make_table(table, headers=headers) + '\n')
 
 
 def _make_table(rows, headers):

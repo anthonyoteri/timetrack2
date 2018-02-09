@@ -1,7 +1,8 @@
 # Copyright (C) 2017, Anthony Oteri
 # All rights reserved.
 
-from datetime import timedelta
+import calendar
+from datetime import datetime, timedelta
 import logging
 from unittest import mock
 
@@ -181,6 +182,29 @@ def test_report(timer_service):
 
     tt.cli.main(options)
     assert timer_service.report.called
+
+
+@pytest.mark.parametrize('month', range(1, 13))
+def test_report_with_month(month, timer_service):
+    options = ['report', '--month', str(month)]
+
+    timer_service.report.return_value = [(['foo', 'bar', 'baz', 'bam'], [
+        ['1', '2', '3', '4'],
+        ['5', '6', '7', '8'],
+    ])]
+
+    tt.cli.main(options)
+
+    today = datetime.today()
+    if month > today.month:
+        today = today.replace(year=today.year - 1)
+    last_day_of_month = calendar.monthrange(today.year, month)[1]
+
+    expected_begin = today.replace(day=1, month=month).date()
+    expected_end = today.replace(day=last_day_of_month, month=month).date()
+
+    timer_service.report.assert_called_with(
+        range_begin=expected_begin, range_end=expected_end)
 
 
 @mock.patch('dateparser.parse')

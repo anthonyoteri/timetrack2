@@ -142,3 +142,13 @@ To view a report of the current month's activity you can use the "report" comman
 ```bash
 $> tt report
 ```
+
+To view the report for a different month, the month number can be
+specified with `--month`.  Supplying a month greater than the current
+month, will generate a report on that month for the previous year.
+
+For example, if it is currently February, and you wish to view the
+report for January of this year, specify `--month 1`, but if you specify
+`--month 3` it will generate a report for March of the previous year.
+It is not possible to generate a report for a future month, or for a
+month more than 1 year ago.

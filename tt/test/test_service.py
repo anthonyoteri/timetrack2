@@ -2,11 +2,8 @@
 # All rights reserved.
 
 import collections
-from datetime import timedelta
-try:
-    from unittest import mock
-except ImportError:
-    import mock
+from datetime import date, timedelta
+from unittest import mock
 
 import pytest
 
@@ -138,3 +135,44 @@ def test_records(timers_by_timerange, mocker, timer_service):
 
     timers_by_timerange.assert_called_with(start=begin, end=end)
     assert actual == expected
+
+
+@mock.patch('tt.timer.aggregate_by_task_date')
+def test_report(agg, mocker, timer_service):
+
+    weekly_data = {
+        'foo': {
+            date(2018, 2, 6): timedelta(hours=1),
+            date(2018, 2, 7): timedelta(hours=2),
+        },
+        'bar': {
+            date(2018, 2, 6): timedelta(hours=7),
+            date(2018, 2, 7): timedelta(hours=6),
+        },
+    }
+
+    agg.return_value = weekly_data
+
+    range_begin = date(2018, 2, 5)
+    range_end = date(2018, 2, 8)
+
+    header, table = list(
+        timer_service.report(range_begin=range_begin, range_end=range_end))[0]
+
+    expected_header = [
+        'task name', '2018-02-05', '2018-02-06', '2018-02-07', '2018-02-08',
+        '2018-02-09'
+    ]
+
+    assert expected_header == header
+
+    expected_table = [
+        ['foo', None,
+         timedelta(hours=1),
+         timedelta(hours=2), None, None],
+        ['bar', None,
+         timedelta(hours=7),
+         timedelta(hours=6), None, None],
+    ]
+
+    assert expected_table == table

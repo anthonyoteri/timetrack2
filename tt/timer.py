@@ -1,6 +1,7 @@
 # Copyright (C) 2018, Anthony Oteri
 # All rights reserved.
 
+import collections
 from datetime import datetime, timedelta
 import logging
 
@@ -124,3 +125,15 @@ def groups_by_timerange(start, end=datetime.utcnow()):
             elapsed = timedelta(
                 seconds=sum(t.elapsed.total_seconds() for t in timers))
             yield task_name, elapsed
+
+
+def aggregate_by_task_date(start, end):
+
+    data = collections.defaultdict(lambda: collections.defaultdict(timedelta))
+
+    with transaction() as session:
+        for timer in session.query(Timer).filter(start < Timer.start,
+                                                 Timer.start <= end).all():
+            data[timer.task.name][timer.start.date()] += timer.elapsed
+
+    return data

@@ -1,5 +1,7 @@
 language: python
-sudo: true
+
+# Use containers instead of full VMs for faster startup.
+sudo: false
 
 matrix:
   fast_finish: true
@@ -7,8 +9,8 @@ matrix:
     - python: nightly
 
 python:
-  - "3.6"
-  - "nightly"
+  - 3.6
+  - nightly
 
 install:
   - pip install -r requirements.txt

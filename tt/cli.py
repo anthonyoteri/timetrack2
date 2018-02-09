@@ -2,6 +2,7 @@
 # All rights reserved
 
 import argparse
+import calendar
 from datetime import datetime
 import logging
 import sys
@@ -78,6 +79,11 @@ def main(argv=sys.argv[1:]):
     records_parser.set_defaults(func=do_records)
 
     report_parser = subparsers.add_parser('report')
+    report_parser.add_argument(
+        '--month',
+        type=int,
+        choices=range(1, 13),
+        help="Month to generate report for")
     report_parser.set_defaults(func=do_report)
 
     args = parser.parse_args(argv)
@@ -156,11 +162,20 @@ def do_records(args):
 def do_report(args):
     service = TimerService()
 
-    now = datetime.utcnow().date()
-    begin = now.replace(day=1)
-    end = now.replace(day=28)
+    target_date = datetime.today()
 
-    for headers, table in service.report(range_begin=begin, range_end=end):
+    if args.month:
+        if args.month > target_date.month:
+            target_date = target_date.replace(year=target_date.year - 1)
+        target_date = target_date.replace(month=args.month)
+
+    last_day_of_month = calendar.monthrange(target_date.year,
+                                            target_date.month)[1]
+
+    for headers, table in service.report(
+            range_begin=target_date.replace(day=1).date(),
+            range_end=target_date.replace(day=last_day_of_month).date()):
+
         print(_make_table(table, headers=headers) + '\n')
 
 

@@ -1,27 +1,25 @@
 # Copyright (C) 2018, Anthony Oteri
 # All rights reserved
 
-from datetime import timedelta
-
 import pandas
 
 
-def days(start, end, weekdays=False, tuples=False):
-
-    func = pandas.bdate_range if weekdays else pandas.date_range
-
-    for timestamp in func(start, end):
-        date = timestamp.to_pydatetime()
-        if tuples:
-            yield date, date + timedelta(days=1)
-        else:
-            yield date
+def range_days(start, end):
+    for ts in pandas.date_range(start, end):
+        yield ts.to_pydatetime()
 
 
-def weeks(start, end, tuples=False):
-    for timestamp in pandas.date_range(start, end, freq='W-SUN'):
-        date = timestamp.to_pydatetime()
-        if tuples:
-            yield date, date + timedelta(days=7)
-        else:
-            yield date
+def range_weekdays(start, end):
+    for ts in pandas.bdate_range(start, end):
+        yield ts.to_pydatetime()
+
+
+def range_weeks(start, end):
+    for ts in pandas.date_range(start, end, freq='W-SUN'):
+        yield ts.to_pydatetime()
+
+
+def week_boundaries(date):
+    begin = date - pandas.offsets.Week(weekday=6)
+    end = date + pandas.offsets.Week(weekday=5)
+    return begin.to_pydatetime(), end.to_pydatetime()

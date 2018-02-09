@@ -3,10 +3,7 @@
 
 from datetime import timedelta
 import logging
-try:
-    from unittest import mock
-except ImportError:
-    import mock
+from unittest import mock
 
 import pytest
 
@@ -28,11 +25,6 @@ def timer_service(mocker):
     service = mocker.Mock()
     init.return_value = service
     return service
-
-
-def test_main_no_args():
-    with pytest.raises(SystemExit):
-        tt.cli.main([])
 
 
 @pytest.mark.parametrize('verbose', [True, False])
@@ -177,6 +169,18 @@ def test_records(parse, options, mocker, timer_service):
 
     timer_service.records.assert_called_with(
         range_begin=begin.replace(), range_end=end.replace())
+
+
+def test_report(timer_service):
+    options = ['report']
+
+    timer_service.report.return_value = [(['foo', 'bar', 'baz', 'bam'], [
+        ['1', '2', '3', '4'],
+        ['5', '6', '7', '8'],
+    ])]
+
+    tt.cli.main(options)
+    assert timer_service.report.called
 
 
 @mock.patch('dateparser.parse')

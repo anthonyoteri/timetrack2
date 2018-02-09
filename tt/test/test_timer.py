@@ -5,9 +5,11 @@ from datetime import datetime, timedelta
 
 import pytest
 
+from tt.datetime import range_days
 from tt.exc import ValidationError
-from tt.timer import (active, create, groups_by_timerange, remove, timers,
-                      timers_by_timerange, update, _validate)
+from tt.timer import (active, aggregate_by_task_date, create,
+                      groups_by_timerange, remove, timers, timers_by_timerange,
+                      update, _validate)
 from tt.orm import Task, Timer
 
 
@@ -295,3 +297,32 @@ def test_validate_stop_in_future():
 
     with pytest.raises(AssertionError):
         _validate(Timer(start=start, stop=stop))
+
+
+def test_aggregate_by_task_date(session):
+
+    foo = Task(name='foo')
+    bar = Task(name='bar')
+    session.add_all([foo, bar])
+
+    for day in range_days(datetime(2018, 1, 1), datetime(2018, 2, 1)):
+        foo_work1 = Timer(
+            task=foo, start=day.replace(hour=9), stop=day.replace(hour=12))
+        foo_work2 = Timer(
+            task=foo,
+            start=day.replace(hour=12, minute=30),
+            stop=day.replace(hour=15))
+        bar_work = Timer(
+            task=bar, start=day.replace(hour=15), stop=day.replace(hour=17))
+        session.add_all([foo_work1, foo_work2, bar_work])
+
+    results = aggregate_by_task_date(
+        datetime(2018, 1, 1), datetime(2018, 2, 1))
+
+    assert len(results) == 2, "Unexpected number of tasks"
+    assert len(results['foo']) == 31, "Unexpected number of days for task foo"
+    assert len(results['bar']) == 31, "Unexpected number of days for task bar"
+    for date in results['foo']:
+        assert results['foo'][date] == timedelta(hours=5, minutes=30)
+    for date in results['bar']:
+        assert results['bar'][date] == timedelta(hours=2)

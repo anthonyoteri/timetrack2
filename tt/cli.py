@@ -2,6 +2,7 @@
 # All rights reserved
 
 import argparse
+from datetime import datetime
 import logging
 import sys
 
@@ -77,19 +78,13 @@ def main(argv=sys.argv[1:]):
     records_parser.set_defaults(func=do_records)
 
     report_parser = subparsers.add_parser('report')
-    report_parser.add_argument('--week', action='store_true')
-    report_parser.add_argument('--month', action='store_true')
     report_parser.set_defaults(func=do_report)
 
     args = parser.parse_args(argv)
     configure_logging(args.verbose)
 
     connect(echo=args.verbose)
-    try:
-        args.func(args)
-    except AttributeError:
-        parser.print_usage()
-        raise SystemExit(1)
+    args.func(args)
 
 
 def configure_logging(verbose=False):
@@ -159,16 +154,13 @@ def do_records(args):
 
 
 def do_report(args):
-
     service = TimerService()
 
-    func = service.report_week
-    if args.month:
-        func = service.report_month
+    now = datetime.utcnow().date()
+    begin = now.replace(day=1)
+    end = now.replace(day=28)
 
-    for weekly in func():
-        headers = _format_headers(weekly[0])
-        table = weekly[1:]
+    for headers, table in service.report(range_begin=begin, range_end=end):
         print(_make_table(table, headers=headers) + '\n')
 
 

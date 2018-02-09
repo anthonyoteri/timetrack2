@@ -65,15 +65,27 @@ class TimerService(object):
                 start=range_begin, end=range_end):
             yield id, task, start, stop, elapsed
 
-    def report_week(self, timestamp=datetime.utcnow()):
-        start = timestamp - timedelta(days=7)
+    def report(self, range_begin=None, range_end=None):
 
-        for weekly_grid in tt.timer.daily_report(start, timestamp):
-            yield weekly_grid
+        period_start, _ = tt.datetime.week_boundaries(range_begin)
+        _, period_end = tt.datetime.week_boundaries(range_end)
 
-    def report_month(self, timestamp=datetime.utcnow()):
-        start = timestamp.replace(day=1) - timedelta(days=4)
-        end = start + timedelta(days=32)
+        for week_start in tt.datetime.range_weeks(period_start, period_end):
+            week_end = week_start + timedelta(days=7)
+            weekly_data = tt.timer.aggregate_by_task_date(
+                start=week_start, end=week_end)
 
-        for weekly_grid in tt.timer.daily_report(start, end):
-            yield weekly_grid
+            headers = ['task name'] + list(
+                str(d.date())
+                for d in tt.datetime.range_weekdays(week_start, week_end))
+            rows = []
+            for task in weekly_data:
+                log.debug('Columns for task %s %s', task,
+                          list(weekly_data[task].keys()))
+                cols = [task] + [
+                    weekly_data[task].get(d.date())
+                    for d in tt.datetime.range_weekdays(week_start, week_end)
+                ]
+                rows.append(cols)
+
+            yield headers, rows

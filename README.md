@@ -134,3 +134,11 @@ Or for the month of January:
 $> tt records --begin "january 1 at midnight EDT" \
    --end "february 1 at midnight EDT"
 ```
+
+## Reporting
+
+To view a report of the current month's activity you can use the "report" command, e.g.
+
+```bash
+$> tt report
+```

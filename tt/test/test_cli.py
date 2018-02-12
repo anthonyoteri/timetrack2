@@ -2,7 +2,7 @@
 # All rights reserved.
 
 import calendar
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import logging
 import io
 from unittest import mock
@@ -196,13 +196,14 @@ def test_report_with_month(month, timer_service):
 
     tt.cli.main(options)
 
-    today = datetime.today()
+    today = datetime.now(timezone.utc).replace(
+        hour=0, minute=0, second=0, microsecond=0)
     if month > today.month:
         today = today.replace(year=today.year - 1)
     last_day_of_month = calendar.monthrange(today.year, month)[1]
 
-    expected_begin = today.replace(day=1, month=month).date()
-    expected_end = today.replace(day=last_day_of_month, month=month).date()
+    expected_begin = today.replace(day=1, month=month)
+    expected_end = today.replace(day=last_day_of_month, month=month)
 
     timer_service.report.assert_called_with(
         range_begin=expected_begin, range_end=expected_end)

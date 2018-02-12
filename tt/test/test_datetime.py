@@ -3,6 +3,7 @@
 
 from datetime import datetime
 
+from dateutil import tz
 import pandas
 import pytest
 
@@ -49,3 +50,37 @@ def test_range_weeks():
 def test_week_boundaries(samples):
     date, expected_begin, expected_end = samples
     assert tt.datetime.week_boundaries(date) == (expected_begin, expected_end)
+
+
+def test_local_time():
+
+    # Validate conversion of naive datetime to aware datetime
+    t0 = datetime(2018, 1, 1)
+    t1 = tt.datetime.local_time(t0)
+    assert t1 == t0.replace(tzinfo=tz.tzutc()).astimezone(tz.tzlocal())
+
+    # Validate conversion of aware datetime to aware datetime
+    t2 = tt.datetime.local_time(t0.replace(tzinfo=tz.tzutc()))
+    assert t2 == t1
+
+    # Ensure all datetimes represent the same unix timestamp
+    epoch = datetime(1970, 1, 1, tzinfo=tz.tzutc())
+    assert t2 - epoch == t1 - epoch
+    assert t1 - epoch == t0.replace(tzinfo=tz.tzutc()) - epoch
+
+
+def test_utc_time():
+
+    # Validate conversion of naive datetime to aware datetime
+    t0 = datetime(2018, 1, 1)
+    t1 = tt.datetime.utc_time(t0)
+    assert t1 == t0.replace(tzinfo=tz.tzlocal()).astimezone(tz.tzutc())
+
+    # Validate conversion of aware datetime to aware datetime
+    t2 = tt.datetime.utc_time(t0.replace(tzinfo=tz.tzlocal()))
+    assert t2 == t1
+
+    # Ensure all datetimes represent the same unix timestamp
+    epoch = datetime(1970, 1, 1, tzinfo=tz.tzutc())
+    assert t2 - epoch == t1 - epoch
+    assert t1 - epoch == t0.replace(tzinfo=tz.tzlocal()) - epoch

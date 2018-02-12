@@ -1,7 +1,7 @@
 # Copyright (C) 2018, Anthony Oteri
 # All rights reserved
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 from unittest import mock
@@ -52,9 +52,10 @@ def test_load(task_service, timer_service, mocker):
 
     task_service.add.assert_called_once_with(name='foo')
     timer_service.start.assert_called_once_with(
-        task='foo', timestamp=datetime(2018, 1, 1, 0, 0, 0))
+        task='foo',
+        timestamp=datetime(2018, 1, 1, 0, 0, 0, tzinfo=timezone.utc))
     timer_service.stop.assert_called_once_with(
-        timestamp=datetime(2018, 1, 1, 0, 10, 0))
+        timestamp=datetime(2018, 1, 1, 0, 10, 0, tzinfo=timezone.utc))
 
 
 def test_load_duplicate_task(task_service, timer_service, mocker):
@@ -75,13 +76,19 @@ def test_load_duplicate_task(task_service, timer_service, mocker):
     task_service.add.assert_has_calls(add_calls)
 
     start_calls = [
-        mock.call(task='foo', timestamp=datetime(2018, 1, 1, 0, 0, 0)),
-        mock.call(task='foo', timestamp=datetime(2018, 1, 1, 0, 10, 0)),
+        mock.call(
+            task='foo',
+            timestamp=datetime(2018, 1, 1, 0, 0, 0, tzinfo=timezone.utc)),
+        mock.call(
+            task='foo',
+            timestamp=datetime(2018, 1, 1, 0, 10, 0, tzinfo=timezone.utc)),
     ]
     timer_service.start.assert_has_calls(start_calls)
 
     stop_calls = [
-        mock.call(timestamp=datetime(2018, 1, 1, 0, 10, 0)),
-        mock.call(timestamp=datetime(2018, 1, 1, 0, 20, 0)),
+        mock.call(
+            timestamp=datetime(2018, 1, 1, 0, 10, 0, tzinfo=timezone.utc)),
+        mock.call(
+            timestamp=datetime(2018, 1, 1, 0, 20, 0, tzinfo=timezone.utc)),
     ]
     timer_service.stop.assert_has_calls(stop_calls)

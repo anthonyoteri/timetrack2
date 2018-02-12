@@ -1,7 +1,7 @@
 # Copyright (C) 2018, Anthony Oteri
 # All rights reserved.
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import logging
 
 from tt.exc import ValidationError
@@ -29,11 +29,11 @@ class TaskService(object):
 
 
 class TimerService(object):
-    def start(self, task, timestamp=datetime.utcnow()):
+    def start(self, task, timestamp=datetime.now(timezone.utc)):
         log.debug("Starting new timer for %s at %s", task, timestamp)
         tt.timer.create(task=task, start=timestamp)
 
-    def stop(self, timestamp=datetime.utcnow()):
+    def stop(self, timestamp=datetime.now(timezone.utc)):
         log.debug("Stopping last active timer at %s", timestamp)
         last = tt.timer.active()
         if last is not None:
@@ -56,7 +56,7 @@ class TimerService(object):
         for week_start in tt.datetime.range_weeks(period_start, period_end):
             week_end = week_start + timedelta(days=7)
             weekly_data = tt.timer.aggregate_by_task_date(
-                start=week_start, end=week_end)
+                start=range_begin, end=range_end)
 
             headers = ['task name'] + list(
                 str(d.date())

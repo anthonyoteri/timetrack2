@@ -7,6 +7,7 @@ install_requires = [
     'iso8601',
     'pandas',
     'SQLALchemy',
+    'SQLAlchemy-Utc',
     'tabulate',
 ]
 

@@ -4,6 +4,7 @@
 import calendar
 from datetime import datetime, timedelta
 import logging
+import io
 from unittest import mock
 
 import pytest
@@ -205,6 +206,40 @@ def test_report_with_month(month, timer_service):
 
     timer_service.report.assert_called_with(
         range_begin=expected_begin, range_end=expected_end)
+
+
+@pytest.mark.parametrize('destination', ['-', '/tmp/foo'])
+@mock.patch('tt.cli.open')
+@mock.patch('tt.io.dump')
+def test_export(dump, mock_open, destination):
+    options = ['export', destination]
+    mock_open.return_value = mock.MagicMock(spec=io.IOBase)
+
+    tt.cli.main(options)
+
+    if destination == '-':
+        assert not mock_open.called
+    else:
+        mock_open.assert_called_once_with(destination, 'w')
+
+    assert dump.called
+
+
+@pytest.mark.parametrize('source', ['-', '/tmp/foo'])
+@mock.patch('tt.cli.open')
+@mock.patch('tt.io.load')
+def test_import(load, mock_open, source):
+    options = ['import', source]
+    mock_open.return_value = mock.MagicMock(spec=io.IOBase)
+
+    tt.cli.main(options)
+
+    if source == '-':
+        assert not mock_open.called
+    else:
+        mock_open.assert_called_once_with(source, 'r')
+
+    assert load.called
 
 
 @mock.patch('dateparser.parse')

@@ -11,6 +11,7 @@ import dateparser
 from tabulate import tabulate
 
 from tt.exc import ParseError
+import tt.io
 from tt.sql import connect
 from tt.service import TaskService, TimerService
 
@@ -85,6 +86,16 @@ def main(argv=sys.argv[1:]):
         choices=range(1, 13),
         help="Month to generate report for")
     report_parser.set_defaults(func=do_report)
+
+    # Commands for import and export
+    export_parser = subparsers.add_parser('export')
+    export_parser.add_argument(
+        'destination', help='Destination filename or - for stdout')
+    export_parser.set_defaults(func=do_export)
+
+    import_parser = subparsers.add_parser('import')
+    import_parser.add_argument('source', help='Source filename or - for stdin')
+    import_parser.set_defaults(func=do_import)
 
     args = parser.parse_args(argv)
     configure_logging(args.verbose)
@@ -199,6 +210,27 @@ def _parse_timestamp(timestamp_in):
         raise ParseError("Unable to parse %s" % timestamp_in)
 
     return timestamp_out.replace(microsecond=0)
+
+
+def do_export(args):
+    service = TimerService()
+    if args.destination == '-':
+        tt.io.dump(service, sys.stdout)
+        return
+
+    with open(args.destination, 'w') as out:
+        tt.io.dump(service, out)
+
+
+def do_import(args):
+    task_service = TaskService()
+    timer_service = TimerService()
+
+    if args.source == '-':
+        tt.io.load(task_service, timer_service, sys.stdin)
+        return
+    with open(args.source, 'r') as in_:
+        tt.io.load(task_service, timer_service, in_)
 
 
 if __name__ == '__main__':

@@ -24,7 +24,7 @@ for project, start, elapsed in c.execute(
 
     record = {
         'task': project,
-        'start': timestamp.isoformat() + 'Z',
+        'start': timestamp.isoformat(),
         'elapsed': int(elapsed),
     }
 

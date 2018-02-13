@@ -25,6 +25,13 @@ For example, to create the task "project1", issue the following command.
 $> tt create project1
 ```
 
+The `create` also takes an optional description after the project name, which
+will be shown while listing the tasks.
+
+```bash
+$> tt create project1 'Some longer description of what project 1 is for'
+```
+
 If you must include spaces or special characters, quoting will be
 necessary to avoid the shell from misinterpreting the name, e.g.
 
@@ -37,8 +44,22 @@ Now you are able to view what tasks you have in the system using the
 
 ```bash
 $> tt tasks
-All Tasks:
-  project1
+```
+
+You may also want to add a description to an existing task, to help 
+differentiate it in the task list. Use the `descrbe` command for this.
+This command takes the description as a second parameter.  If the
+description is "", an empty string, an existing description will be
+erased.
+
+```bash
+$> tt describe project1 "New description of project 1"
+```
+
+To remove the existing description, use:
+
+```bash
+$> tt describe project1 ""
 ```
 
 As long as you have not worked on a project, it may be deleted.  Once

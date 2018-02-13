@@ -16,6 +16,16 @@ def test_create(session):
     results = session.query(Task).filter(Task.name == 'foo').all()
     assert len(results) == 1
     assert results[0].name == 'foo'
+    assert results[0].description is None
+
+
+def test_create_with_description(session):
+    create(name='foo', description="Foobar")
+
+    results = session.query(Task).filter(Task.name == 'foo').all()
+    assert len(results) == 1
+    assert results[0].name == 'foo'
+    assert results[0].description == 'Foobar'
 
 
 def test_create_duplicate_name_raises(session):
@@ -57,6 +67,24 @@ def test_rename_duplicate_name_raises(session):
 
     with pytest.raises(ValidationError):
         update(2, name='foo')
+
+
+def test_describe_task(session):
+    create(name='foo', description='old')
+    update(1, description='bar')
+
+    task = session.query(Task).get(1)
+    assert task.name == 'foo'
+    assert task.description == 'bar'
+
+
+def test_describe_task_blank_erases(session):
+    create(name='foo', description='foobar')
+    update(1, description='')
+
+    task = session.query(Task).get(1)
+    assert task.name == 'foo'
+    assert task.description is None
 
 
 def test_remove(session):
@@ -113,7 +141,6 @@ def test_all(session):
 
     names = ['foo', 'bar', 'baz', 'boom']
     session.add_all([Task(name=n) for n in names])
-    session.flush()
 
     for expected_name, task in zip(names, tasks()):
         assert task.name == expected_name

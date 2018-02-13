@@ -36,7 +36,15 @@ def main(argv=sys.argv[1:]):
 
     create_parser = subparsers.add_parser('create')
     create_parser.add_argument('name', help='Task name')
+    create_parser.add_argument(
+        'description', help='Long description', nargs='?')
     create_parser.set_defaults(func=do_create)
+
+    describe_parser = subparsers.add_parser('describe')
+    describe_parser.add_argument('name', help='Task name')
+    describe_parser.add_argument(
+        'description', help='Task description', nargs='?')
+    describe_parser.set_defaults(func=do_describe)
 
     rename_parser = subparsers.add_parser('rename')
     rename_parser.add_argument('old_name', help='Existing task name')
@@ -121,7 +129,13 @@ def configure_logging(verbose=False):
 def do_create(args):
     log.info('create task with name %s', args.name)
     service = TaskService()
-    service.add(name=args.name)
+    service.add(name=args.name, description=args.description)
+
+
+def do_describe(args):
+    log.info('add description to task with name %s', args.name)
+    service = TaskService()
+    service.describe(name=args.name, description=args.description)
 
 
 def do_rename(args):
@@ -134,9 +148,8 @@ def do_tasks(args):
     log.info('list tasks')
     service = TaskService()
 
-    table = [[t] for t in service.list()]
-    headers = _format_headers(['task'])
-    print(_make_table(table, headers=headers))
+    headers = _format_headers(['task', 'description'])
+    print(_make_table(service.list(), headers=headers))
 
 
 def do_remove(args):

@@ -13,15 +13,15 @@ from tt.sql import transaction
 log = logging.getLogger(__name__)
 
 
-def create(name):
-    log.debug('creating task with name %s', name)
+def create(name, description=None):
+    log.debug('creating task with name %s, description=%s', name, description)
 
     if name == "":
         raise ValidationError("Cannot use empty name")
 
     try:
         with transaction() as session:
-            task = Task(name=name)
+            task = Task(name=name, description=description)
             session.add(task)
     except IntegrityError:
         raise ValidationError("A task with name %s already exists" % name)
@@ -32,13 +32,19 @@ def get(name):
         return session.query(Task).filter(Task.name == name).one()
 
 
-def update(id, name=None):
+def update(id, name=None, description=None):
     log.debug('updating task %s with name=%s', id, name)
 
     try:
         with transaction() as session:
             task = session.query(Task).get(id)
-            task.name = name
+            if name is not None:
+                task.name = name
+            if description is not None:
+                if description == '':
+                    task.description = None
+                else:
+                    task.description = description
     except IntegrityError:
         raise ValidationError("A task with name %s already exists" % name)
 

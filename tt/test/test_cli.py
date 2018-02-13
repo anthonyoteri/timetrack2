@@ -43,10 +43,22 @@ def test_configure_logging(basic_config, verbose):
 
 @pytest.mark.parametrize('options', [
     ['create', 'foo'],
+    ['create', 'foo', 'bar'],
 ])
 def test_create(options, task_service):
     tt.cli.main(options)
-    task_service.add.assert_called_with(name=options[1])
+
+    if len(options) == 2:
+        task_service.add.assert_called_with(name=options[1], description=None)
+    else:
+        task_service.add.assert_called_with(
+            name=options[1], description=options[2])
+
+
+def test_describe(task_service):
+    options = ['describe', 'foo', 'bar']
+    tt.cli.main(options)
+    task_service.describe.assert_called_with(name='foo', description='bar')
 
 
 def test_rename(task_service):
@@ -59,7 +71,8 @@ def test_rename(task_service):
     ['tasks'],
 ])
 def test_tasks(options, mocker, task_service):
-    task_service.list.return_value = iter(['foo', 'bar', 'bam'])
+    task_service.list.return_value = iter([('foo', 'one'), ('bar', 'two'),
+                                           ('bam', 'three')])
     tt.cli.main(options)
     assert task_service.list.called
 

@@ -1,7 +1,7 @@
 # Coypright (C) 2018, Anthony Oteri
 # All rights reserved
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from dateutil import tz
 import pandas
@@ -84,3 +84,13 @@ def test_utc_time():
     epoch = datetime(1970, 1, 1, tzinfo=tz.tzutc())
     assert t2 - epoch == t1 - epoch
     assert t1 - epoch == t0.replace(tzinfo=tz.tzlocal()) - epoch
+
+
+def test_timedelta_to_string():
+    td = timedelta(hours=25, minutes=37, seconds=15)
+    assert tt.datetime.timedelta_to_string(td) == "25:37"
+
+
+def test_timedelta_to_string_zero_padding():
+    td = timedelta(hours=5, minutes=4, seconds=15)
+    assert tt.datetime.timedelta_to_string(td) == "05:04"

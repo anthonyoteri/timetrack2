@@ -3,7 +3,7 @@
 
 import argparse
 import calendar
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import logging
 import sys
 
@@ -14,7 +14,7 @@ from tt.exc import ParseError
 import tt.io
 from tt.sql import connect
 from tt.service import TaskService, TimerService
-from tt.datetime import local_time
+from tt.datetime import local_time, timedelta_to_string
 
 log = logging.getLogger('tt.cli')
 
@@ -196,6 +196,8 @@ def _make_table(rows, headers):
     def convert(raw):
         if isinstance(raw, datetime):
             return local_time(raw).replace(tzinfo=None)
+        if isinstance(raw, timedelta):
+            return timedelta_to_string(raw)
         return raw
 
     table = [[convert(c) for c in r] for r in rows]

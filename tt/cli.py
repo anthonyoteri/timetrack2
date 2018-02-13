@@ -3,7 +3,7 @@
 
 import argparse
 import calendar
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 import sys
 
@@ -11,14 +11,16 @@ import dateparser
 from tabulate import tabulate
 
 from tt.exc import ParseError
+import tt.io
 from tt.sql import connect
 from tt.service import TaskService, TimerService
+from tt.datetime import local_time
 
 log = logging.getLogger('tt.cli')
 
 DEFAULT_REPORT_START = "monday at midnight UTC"
 DEFAULT_REPORT_END = "now"
-DATEPARSER_SETTINGS = {'TO_TIMEZONE': 'UTC', 'RETURN_AS_TIMEZONE_AWARE': False}
+DATEPARSER_SETTINGS = {'TO_TIMEZONE': 'UTC', 'RETURN_AS_TIMEZONE_AWARE': True}
 DEFAULT_TABLE_FORMAT = 'simple'
 DEFAULT_TABLE_HEADER_FORMATTER = str.capitalize
 
@@ -85,6 +87,16 @@ def main(argv=sys.argv[1:]):
         choices=range(1, 13),
         help="Month to generate report for")
     report_parser.set_defaults(func=do_report)
+
+    # Commands for import and export
+    export_parser = subparsers.add_parser('export')
+    export_parser.add_argument(
+        'destination', help='Destination filename or - for stdout')
+    export_parser.set_defaults(func=do_export)
+
+    import_parser = subparsers.add_parser('import')
+    import_parser.add_argument('source', help='Source filename or - for stdin')
+    import_parser.set_defaults(func=do_import)
 
     args = parser.parse_args(argv)
     configure_logging(args.verbose)
@@ -162,7 +174,8 @@ def do_records(args):
 def do_report(args):
     service = TimerService()
 
-    target_date = datetime.today()
+    target_date = datetime.now(timezone.utc).replace(
+        hour=0, minute=0, second=0, microsecond=0)
 
     if args.month:
         if args.month > target_date.month:
@@ -173,15 +186,22 @@ def do_report(args):
                                             target_date.month)[1]
 
     for headers, table in service.report(
-            range_begin=target_date.replace(day=1).date(),
-            range_end=target_date.replace(day=last_day_of_month).date()):
+            range_begin=target_date.replace(day=1),
+            range_end=target_date.replace(day=last_day_of_month)):
 
         print(_make_table(table, headers=headers) + '\n')
 
 
 def _make_table(rows, headers):
+    def convert(raw):
+        if isinstance(raw, datetime):
+            return local_time(raw).replace(tzinfo=None)
+        return raw
+
+    table = [[convert(c) for c in r] for r in rows]
+
     return tabulate(
-        rows, headers=_format_headers(headers), tablefmt=DEFAULT_TABLE_FORMAT)
+        table, headers=_format_headers(headers), tablefmt=DEFAULT_TABLE_FORMAT)
 
 
 def _format_headers(headers, formatter=DEFAULT_TABLE_HEADER_FORMATTER):
@@ -201,5 +221,30 @@ def _parse_timestamp(timestamp_in):
     return timestamp_out.replace(microsecond=0)
 
 
-if __name__ == '__main__':
-    main()
+def do_export(args):
+    service = TimerService()
+    if args.destination == '-':
+        tt.io.dump(service, sys.stdout)
+        return
+
+    with open(args.destination, 'w') as out:
+        tt.io.dump(service, out)
+
+
+def do_import(args):
+    task_service = TaskService()
+    timer_service = TimerService()
+
+    if args.source == '-':
+        tt.io.load(task_service, timer_service, sys.stdin)
+        return
+    with open(args.source, 'r') as in_:
+        tt.io.load(task_service, timer_service, in_)
+
+
+def __init__():
+    if __name__ == '__main__':
+        sys.exit(main())
+
+
+__init__()

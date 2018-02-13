@@ -31,7 +31,8 @@ test: build
 
 .PHONY: clean
 clean:
-	rm -rf $(VIRTUALENV) build dist *egg-info* .coverage
+	rm -rf $(VIRTUALENV) build dist *egg-info* .eggs .coverage
 	rm -rf coverage.xml htmlcov junitxml-result.xml
+	rm -rf .pytest.cache .cache
 	find . -name '*.py[co]' -delete
 	

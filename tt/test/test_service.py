@@ -2,7 +2,7 @@
 # All rights reserved.
 
 import collections
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from unittest import mock
 
 import pytest
@@ -62,7 +62,7 @@ def test_list(tasks, task_service):
 @mock.patch('tt.timer.create')
 def test_start(create, mocker, timer_service):
 
-    timestamp = mocker.Mock()
+    timestamp = mocker.MagicMock(spec=datetime)
     timer_service.start('foo', timestamp)
 
     create.assert_called_once_with(task='foo', start=timestamp)
@@ -70,7 +70,7 @@ def test_start(create, mocker, timer_service):
 
 @mock.patch('tt.timer.create')
 def test_start_raises_validation_error(create, mocker, timer_service):
-    timestamp = mocker.Mock()
+    timestamp = mocker.MagicMock(spec=datetime)
     create.side_effect = ValidationError
     with pytest.raises(ValidationError):
         timer_service.start('foo', timestamp)
@@ -80,10 +80,11 @@ def test_start_raises_validation_error(create, mocker, timer_service):
 @mock.patch('tt.timer.update')
 def test_stop_with_active(update, active, mocker, timer_service):
 
-    timer = Timer(id=1, task=Task(name='foo'), start=mocker.Mock())
+    timer = Timer(
+        id=1, task=Task(name='foo'), start=mocker.MagicMock(spec=datetime))
     active.return_value = timer
 
-    timestamp = mocker.Mock()
+    timestamp = mocker.MagicMock(spec=datetime)
     timer_service.stop(timestamp)
 
     assert active.called
@@ -95,7 +96,7 @@ def test_stop_with_active(update, active, mocker, timer_service):
 def test_stop_without_active(update, active, mocker, timer_service):
     active.return_value = None
 
-    timestamp = mocker.Mock()
+    timestamp = mocker.MagicMock(spec=datetime)
     timer_service.stop(timestamp)
 
     assert active.called
@@ -107,8 +108,8 @@ def test_summary(groups_by_timerange, mocker, timer_service):
     expected = [('foo', timedelta(hours=1)), ('bar', timedelta(hours=2))]
     groups_by_timerange.return_value = iter(expected)
 
-    begin = mocker.Mock()
-    end = mocker.Mock()
+    begin = mocker.MagicMock(spec=datetime)
+    end = mocker.MagicMock(spec=datetime)
 
     actual = list(timer_service.summary(range_begin=begin, range_end=end))
 
@@ -128,8 +129,8 @@ def test_records(timers_by_timerange, mocker, timer_service):
 
     timers_by_timerange.return_value = iter(expected)
 
-    begin = mocker.Mock()
-    end = mocker.Mock()
+    begin = mocker.MagicMock(spec=datetime)
+    end = mocker.MagicMock(spec=datetime)
 
     actual = list(timer_service.records(range_begin=begin, range_end=end))
 

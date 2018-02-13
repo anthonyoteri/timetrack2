@@ -1,7 +1,7 @@
 # Copyright (C) 2018, Anthony Oteri
 # All rights reserved.
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -21,7 +21,8 @@ def task(session):
 def test_create(session, task):
     session.add(task)
 
-    start = datetime.utcnow().replace(microsecond=0) - timedelta(hours=1)
+    start = datetime.now(
+        timezone.utc).replace(microsecond=0) - timedelta(hours=1)
     create(task=task.name, start=start)
 
     assert session.query(Timer).count() == 1
@@ -37,7 +38,7 @@ def test_create(session, task):
 def test_create_start_in_the_future_raises(session, task):
     session.add(task)
 
-    start = datetime.utcnow() + timedelta(hours=1)
+    start = datetime.now(timezone.utc) + timedelta(hours=1)
     with pytest.raises(ValidationError):
         create(task=task.name, start=start)
 
@@ -46,13 +47,13 @@ def test_create_invalid_task_raises(session):
 
     assert session.query(Task).filter(Task.name == 'bad').count() == 0
     with pytest.raises(ValidationError):
-        create(task="bad", start=datetime.utcnow())
+        create(task="bad", start=datetime.now(timezone.utc))
 
 
 def test_create_second_timer_stops_first(session, task):
     session.add(task)
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     one_hour_ago = now - timedelta(hours=1)
     two_hours_ago = now - timedelta(hours=2)
@@ -83,7 +84,7 @@ def test_update_timer_task(session):
 
     session.add_all([old_task, new_task])
 
-    session.add(Timer(task=old_task, start=datetime.utcnow()))
+    session.add(Timer(task=old_task, start=datetime.now(timezone.utc)))
 
     update(1, task=new_task.name)
 
@@ -94,7 +95,7 @@ def test_update_timer_task(session):
 def test_update_timer_invalid_task_raises(session, task):
     session.add(task)
 
-    session.add(Timer(task=task, start=datetime.utcnow()))
+    session.add(Timer(task=task, start=datetime.now(timezone.utc)))
 
     with pytest.raises(ValidationError):
         update(1, task='invalid_task_name')
@@ -104,7 +105,7 @@ def test_update_time_start(session, task):
 
     session.add(task)
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     one_hour_ago = now - timedelta(hours=1)
     two_hours_ago = now - timedelta(hours=2)
 
@@ -126,7 +127,7 @@ def test_update_invalid_start_raises(session, task, offset):
 
     session.add(task)
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     one_hour_ago = now - timedelta(hours=1)
     two_hours_ago = now - timedelta(hours=2)
     start_time = now + offset
@@ -141,7 +142,7 @@ def test_update_time_stop(session, task):
 
     session.add(task)
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     one_hour_ago = now - timedelta(hours=1)
     two_hours_ago = now - timedelta(hours=2)
 
@@ -163,7 +164,7 @@ def test_update_stop_time_invalid_constraint(session, task, offset):
 
     session.add(task)
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     an_hour_ago = now - timedelta(hours=1)
     stop_time = now + offset
 
@@ -176,7 +177,7 @@ def test_update_stop_time_invalid_constraint(session, task, offset):
 def test_remove(session, task):
     session.add(task)
 
-    session.add(Timer(task=task, start=datetime.utcnow()))
+    session.add(Timer(task=task, start=datetime.now(timezone.utc)))
 
     assert session.query(Timer).count() == 1
     remove(1)
@@ -187,7 +188,7 @@ def test_remove(session, task):
 def test_active_running(session, task):
     session.add(task)
 
-    session.add(Timer(task=task, start=datetime.utcnow()))
+    session.add(Timer(task=task, start=datetime.now(timezone.utc)))
 
     cur = active()
 
@@ -199,7 +200,10 @@ def test_active_stopped(session, task):
     session.add(task)
 
     session.add(
-        Timer(task=task, start=datetime.utcnow(), stop=datetime.utcnow()))
+        Timer(
+            task=task,
+            start=datetime.now(timezone.utc),
+            stop=datetime.now(timezone.utc)))
 
     assert active() is None
 
@@ -207,7 +211,7 @@ def test_active_stopped(session, task):
 def test_timers(session, task):
     session.add(task)
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     duration = timedelta(hours=1)
 
     for hours in range(100, 0, -1):
@@ -226,7 +230,7 @@ def test_timers_by_timerange(session, task):
 
     session.add(task)
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     duration = timedelta(hours=1)
 
     for hours in range(100, 0, -1):
@@ -250,7 +254,7 @@ def test_groups_by_timerange(session):
     session.add(Task(name='even'))
     session.add(Task(name='odd'))
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     duration = timedelta(hours=1)
 
     for i, hours in enumerate(range(100, 0, -1)):
@@ -269,7 +273,7 @@ def test_groups_by_timerange(session):
 @pytest.mark.parametrize('running', [False, True])
 def test_validate(running):
 
-    start = datetime.utcnow() - timedelta(hours=1)
+    start = datetime.now(timezone.utc) - timedelta(hours=1)
     stop = start + timedelta(minutes=30)
 
     t = Timer(start=start, stop=None if running else stop)
@@ -277,13 +281,13 @@ def test_validate(running):
 
 
 def test_validate_start_in_future():
-    start = datetime.utcnow() + timedelta(hours=1)
+    start = datetime.now(timezone.utc) + timedelta(hours=1)
     with pytest.raises(AssertionError):
         _validate(Timer(start=start))
 
 
 def test_validate_stop_before_start():
-    start = datetime.utcnow() - timedelta(hours=1)
+    start = datetime.now(timezone.utc) - timedelta(hours=1)
     stop = start - timedelta(hours=1)
 
     with pytest.raises(AssertionError):
@@ -292,7 +296,7 @@ def test_validate_stop_before_start():
 
 def test_validate_stop_in_future():
 
-    start = datetime.utcnow() - timedelta(hours=1)
+    start = datetime.now(timezone.utc) - timedelta(hours=1)
     stop = start + timedelta(hours=2)
 
     with pytest.raises(AssertionError):
@@ -306,6 +310,8 @@ def test_aggregate_by_task_date(session):
     session.add_all([foo, bar])
 
     for day in range_days(datetime(2018, 1, 1), datetime(2018, 2, 1)):
+        day = day.replace(tzinfo=timezone.utc)
+
         foo_work1 = Timer(
             task=foo, start=day.replace(hour=9), stop=day.replace(hour=12))
         foo_work2 = Timer(
@@ -317,7 +323,8 @@ def test_aggregate_by_task_date(session):
         session.add_all([foo_work1, foo_work2, bar_work])
 
     results = aggregate_by_task_date(
-        datetime(2018, 1, 1), datetime(2018, 2, 1))
+        datetime(2018, 1, 1, tzinfo=timezone.utc),
+        datetime(2018, 2, 1, tzinfo=timezone.utc))
 
     assert len(results) == 2, "Unexpected number of tasks"
     assert len(results['foo']) == 31, "Unexpected number of days for task foo"

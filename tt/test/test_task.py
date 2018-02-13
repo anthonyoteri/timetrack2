@@ -1,7 +1,7 @@
 # Copyright (C) 2018, Anthony Oteri.
 # All rights reserved
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 
@@ -72,7 +72,7 @@ def test_remove_task_with_timers_raises(session):
 
     task = session.query(Task).get(1)
 
-    session.add(Timer(task=task, start=datetime.utcnow()))
+    session.add(Timer(task=task, start=datetime.now(timezone.utc)))
     session.flush()
 
     timer = session.query(Timer).get(1)

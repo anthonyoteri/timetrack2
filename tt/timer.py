@@ -2,7 +2,7 @@
 # All rights reserved.
 
 import collections
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import logging
 
 from sqlalchemy.orm.exc import NoResultFound
@@ -74,7 +74,7 @@ def _validate(timer):
     Raises AssertionError: If any of the above conditions are not met.
     """
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     if timer.running:
         assert timer.start < now, "Start time in the future"
     else:
@@ -98,7 +98,7 @@ def timers():
             yield timer
 
 
-def timers_by_timerange(start, end=datetime.utcnow()):
+def timers_by_timerange(start, end=datetime.now(timezone.utc)):
     with transaction() as session:
         for timer in session.query(Timer).filter(start < Timer.start,
                                                  Timer.start <= end).all():
@@ -106,7 +106,7 @@ def timers_by_timerange(start, end=datetime.utcnow()):
                    timer.elapsed)
 
 
-def groups_by_timerange(start, end=datetime.utcnow()):
+def groups_by_timerange(start, end=datetime.now(timezone.utc)):
 
     with transaction() as session:
 

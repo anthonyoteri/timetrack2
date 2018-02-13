@@ -4,8 +4,10 @@ from setuptools import setup, find_packages
 
 install_requires = [
     'dateparser',
+    'iso8601',
     'pandas',
     'SQLALchemy',
+    'SQLAlchemy-Utc',
     'tabulate',
 ]
 

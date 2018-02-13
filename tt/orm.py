@@ -1,9 +1,10 @@
 # Copyright (C) 2018, Anthony Oteri
 # All rights reserved.
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-from sqlalchemy import Column, Integer, DateTime, ForeignKey, String
+from sqlalchemy import Column, Integer, ForeignKey, String
+from sqlalchemy_utc import UtcDateTime
 from sqlalchemy.orm import relationship
 
 from tt.sql import Base
@@ -20,8 +21,8 @@ class Task(Base):
 class Timer(Base):
     __tablename__ = 'timer'
     id = Column(Integer, primary_key=True)
-    start = Column(DateTime, nullable=False)
-    stop = Column(DateTime, nullable=True)
+    start = Column(UtcDateTime(), nullable=False)
+    stop = Column(UtcDateTime(), nullable=True)
 
     task_id = Column(Integer, ForeignKey('task.id'), nullable=False)
     task = relationship("Task", back_populates="timers")
@@ -33,6 +34,7 @@ class Timer(Base):
     @property
     def elapsed(self):
         if self.running:
-            return datetime.utcnow().replace(microsecond=0) - self.start
+            return datetime.now(
+                timezone.utc).replace(microsecond=0) - self.start
         else:
             return self.stop - self.start

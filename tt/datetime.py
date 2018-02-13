@@ -3,6 +3,8 @@
 
 import pandas
 
+from dateutil import tz
+
 
 def range_days(start, end):
     for ts in pandas.date_range(start, end):
@@ -23,3 +25,11 @@ def week_boundaries(date):
     begin = date - pandas.offsets.Week(weekday=6)
     end = date + pandas.offsets.Week(weekday=5)
     return begin.to_pydatetime(), end.to_pydatetime()
+
+
+def local_time(dt):
+    return dt.replace(tzinfo=tz.tzutc()).astimezone(tz.tzlocal())
+
+
+def utc_time(dt):
+    return dt.replace(tzinfo=tz.tzlocal()).astimezone(tz.tzutc())

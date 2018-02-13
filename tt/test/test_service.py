@@ -161,19 +161,35 @@ def test_report(agg, mocker, timer_service):
         timer_service.report(range_begin=range_begin, range_end=range_end))[0]
 
     expected_header = [
-        'task name', '2018-02-05', '2018-02-06', '2018-02-07', '2018-02-08',
-        '2018-02-09'
+        'task name',
+        '2018-02-05',
+        '2018-02-06',
+        '2018-02-07',
+        '2018-02-08',
+        '2018-02-09',
+        'Total',
     ]
 
     assert expected_header == header
 
-    expected_table = [
-        ['foo', None,
-         timedelta(hours=1),
-         timedelta(hours=2), None, None],
-        ['bar', None,
-         timedelta(hours=7),
-         timedelta(hours=6), None, None],
-    ]
+    expected_table = [[
+        'foo', None,
+        timedelta(hours=1),
+        timedelta(hours=2), None, None,
+        timedelta(hours=3)
+    ], [
+        'bar', None,
+        timedelta(hours=7),
+        timedelta(hours=6), None, None,
+        timedelta(hours=13)
+    ], [
+        'TOTAL',
+        timedelta(0),
+        timedelta(hours=8),
+        timedelta(hours=8),
+        timedelta(0),
+        timedelta(0),
+        timedelta(hours=16)
+    ]]
 
     assert expected_table == table

@@ -48,7 +48,7 @@ class TimerService(object):
                 start=range_begin, end=range_end):
             yield id, task, start, stop, elapsed
 
-    def report(self, range_begin=None, range_end=None):
+    def report(self, range_begin=None, range_end=None, threshold=15 * 60):
         period_start, _ = tt.datetime.week_boundaries(range_begin)
         _, period_end = tt.datetime.week_boundaries(range_end)
 
@@ -57,17 +57,35 @@ class TimerService(object):
             weekly_data = tt.timer.aggregate_by_task_date(
                 start=range_begin, end=range_end)
 
-            headers = ['task name'] + list(
+            dates = [
                 str(d.date())
-                for d in tt.datetime.range_weekdays(week_start, week_end))
+                for d in tt.datetime.range_weekdays(week_start, week_end)
+            ]
+            headers = ['task name'] + dates + ['Total']
             rows = []
             for task in weekly_data:
                 log.debug('Columns for task %s %s', task,
                           list(weekly_data[task].keys()))
-                cols = [task] + [
+                cols = [
                     weekly_data[task].get(d.date())
                     for d in tt.datetime.range_weekdays(week_start, week_end)
                 ]
-                rows.append(cols)
+                total = timedelta(
+                    seconds=sum(c.total_seconds() for c in cols
+                                if c is not None) or 0)
+                if total >= timedelta(seconds=threshold):
+                    rows.append([task] + cols + [total])
 
+            totals = [
+                timedelta(
+                    seconds=sum([
+                        c.total_seconds() for c in r
+                        if isinstance(c, timedelta)
+                    ]) or 0) for r in zip(*rows)
+            ][1:]
+            totals = totals or [timedelta(0)] * 7
+
+            log.debug("len totals %d, totals %s", len(totals), totals)
+
+            rows.append(['TOTAL'] + totals)
             yield headers, rows

@@ -4,7 +4,6 @@
 from datetime import datetime, timedelta, timezone
 import logging
 
-from tt.exc import ValidationError
 import tt.datetime
 import tt.task
 import tt.timer

@@ -242,5 +242,9 @@ def do_import(args):
         tt.io.load(task_service, timer_service, in_)
 
 
-if __name__ == '__main__':
-    main()
+def __init__():
+    if __name__ == '__main__':
+        sys.exit(main())
+
+
+__init__()

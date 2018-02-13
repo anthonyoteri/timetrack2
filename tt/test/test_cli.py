@@ -264,3 +264,13 @@ def test_parse_timestamp_raises_error(parse):
     parse.return_value = None
     with pytest.raises(ParseError):
         tt.cli._parse_timestamp('foo')
+
+
+def test_init():
+    """Test the module initialization when __main__ module."""
+    with mock.patch.object(tt.cli, "main", return_value=42):
+        with mock.patch.object(tt.cli, "__name__", "__main__"):
+            with mock.patch.object(tt.cli.sys, 'exit') as mock_exit:
+                tt.cli.__init__()
+
+                assert mock_exit.call_args[0][0] == 42

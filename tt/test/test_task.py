@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 import pytest
 
 from tt.exc import ValidationError
-from tt.task import create, remove, tasks
+from tt.task import create, get, update, remove, tasks
 from tt.orm import Task, Timer
 
 
@@ -33,6 +33,30 @@ def test_create_duplicate_name_raises(session):
 def test_create_invalid_name_raises(session, name):
     with pytest.raises(ValidationError):
         create(name=name)
+
+
+def test_get_task(session):
+    create(name='foo')
+    task = get(name='foo')
+    assert task.id == 1
+    assert task.name == 'foo'
+
+
+def test_rename_task(session):
+    create(name='foo')
+
+    update(1, name='bar')
+
+    task = session.query(Task).get(1)
+    assert task.name == 'bar'
+
+
+def test_rename_duplicate_name_raises(session):
+    create(name='foo')
+    create(name='bar')
+
+    with pytest.raises(ValidationError):
+        update(2, name='foo')
 
 
 def test_remove(session):

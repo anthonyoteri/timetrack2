@@ -38,6 +38,11 @@ def main(argv=sys.argv[1:]):
     create_parser.add_argument('name', help='Task name')
     create_parser.set_defaults(func=do_create)
 
+    rename_parser = subparsers.add_parser('rename')
+    rename_parser.add_argument('old_name', help='Existing task name')
+    rename_parser.add_argument('new_name', help='New task name')
+    rename_parser.set_defaults(func=do_rename)
+
     tasks_parser = subparsers.add_parser('tasks')
     tasks_parser.set_defaults(func=do_tasks)
 
@@ -117,6 +122,12 @@ def do_create(args):
     log.info('create task with name %s', args.name)
     service = TaskService()
     service.add(name=args.name)
+
+
+def do_rename(args):
+    log.info('rename task %s to %s', args.old_name, args.new_name)
+    service = TaskService()
+    service.rename(old_name=args.old_name, new_name=args.new_name)
 
 
 def do_tasks(args):

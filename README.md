@@ -49,6 +49,14 @@ deleting it.  A project can be deleted by issuing the "remove" command.
 $> tt remove project2
 ```
 
+A task can be renamed using the `rename` command.  This takes two
+positional arguments: the existing task name, and the new task name.
+All references to the old name will be replaced with the new name.
+
+```bash
+$> tt rename project2 project3
+```
+
 ## Working with Timers
 
 Once you have one or more tasks in the system, you can start and stop

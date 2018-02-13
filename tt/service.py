@@ -20,6 +20,11 @@ class TaskService(object):
         log.debug("Removing task named %s", name)
         tt.task.remove(name=name)
 
+    def rename(self, old_name, new_name):
+        log.debug("Renaming %s to %s", old_name, new_name)
+        task = tt.task.get(name=old_name)
+        tt.task.update(task.id, name=new_name)
+
     def list(self):
         log.debug("Fetching task list")
 

@@ -48,6 +48,19 @@ def test_remove_validation_error(remove, task_service):
         task_service.remove('foo')
 
 
+@mock.patch('tt.task.get')
+@mock.patch('tt.task.update')
+def test_rename_task(update, get, task_service, mocker):
+    old_task = mocker.MagicMock(spec=Task)
+    old_task.id = 1
+    get.return_value = old_task
+
+    task_service.rename('old', 'new')
+
+    get.assert_called_once_with(name='old')
+    update.assert_called_with(1, name='new')
+
+
 @mock.patch('tt.task.tasks')
 def test_list(tasks, task_service):
     expected = ['foo', 'bar', 'baz']

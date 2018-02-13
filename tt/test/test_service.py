@@ -25,7 +25,13 @@ def timer_service():
 @mock.patch('tt.task.create')
 def test_add_task(create, task_service):
     task_service.add('foo')
-    create.assert_called_once_with(name='foo')
+    create.assert_called_once_with(name='foo', description=None)
+
+
+@mock.patch('tt.task.create')
+def test_add_task_with_description(create, task_service):
+    task_service.add('foo', 'bar')
+    create.assert_called_once_with(name='foo', description='bar')
 
 
 @mock.patch('tt.task.create')
@@ -61,10 +67,36 @@ def test_rename_task(update, get, task_service, mocker):
     update.assert_called_with(1, name='new')
 
 
+@mock.patch('tt.task.get')
+@mock.patch('tt.task.update')
+def test_describe_task(update, get, task_service, mocker):
+    task = mocker.MagicMock(spec=Task)
+    task.id = 1
+    get.return_value = task
+
+    task_service.describe('some task', 'description')
+
+    get.assert_called_once_with(name='some task')
+    update.assert_called_with(1, description='description')
+
+
+@mock.patch('tt.task.get')
+@mock.patch('tt.task.update')
+def test_describe_task_blank(update, get, task_service, mocker):
+    task = mocker.MagicMock(spec=Task)
+    task.id = 1
+    get.return_value = task
+
+    task_service.describe('some task', '')
+
+    get.assert_called_once_with(name='some task')
+    update.assert_called_with(1, description='')
+
+
 @mock.patch('tt.task.tasks')
 def test_list(tasks, task_service):
-    expected = ['foo', 'bar', 'baz']
-    tasks.return_value = [Task(name=n) for n in expected]
+    expected = [('foo', None), ('bar', None), ('baz', 'bam boom')]
+    tasks.return_value = [Task(name=n, description=d) for n, d in expected]
 
     actual = list(task_service.list())
 

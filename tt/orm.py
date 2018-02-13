@@ -13,7 +13,8 @@ from tt.sql import Base
 class Task(Base):
     __tablename__ = 'task'
     id = Column(Integer, primary_key=True)
-    name = Column(String(255), nullable=False, unique=True)
+    name = Column(String(24), nullable=False, unique=True)
+    description = Column(String(255))
 
     timers = relationship("Timer", back_populates="task")
 

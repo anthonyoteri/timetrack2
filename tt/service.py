@@ -12,9 +12,9 @@ log = logging.getLogger(__name__)
 
 
 class TaskService(object):
-    def add(self, name):
+    def add(self, name, description=None):
         log.debug("Add new task named %s", name)
-        tt.task.create(name=name)
+        tt.task.create(name=name, description=description)
 
     def remove(self, name):
         log.debug("Removing task named %s", name)
@@ -25,11 +25,16 @@ class TaskService(object):
         task = tt.task.get(name=old_name)
         tt.task.update(task.id, name=new_name)
 
+    def describe(self, name, description=None):
+        log.debug("Adding description to task %s: %s", name, description)
+        task = tt.task.get(name=name)
+        tt.task.update(task.id, description=description)
+
     def list(self):
         log.debug("Fetching task list")
 
         for task in tt.task.tasks():
-            yield task.name
+            yield task.name, task.description
 
 
 class TimerService(object):

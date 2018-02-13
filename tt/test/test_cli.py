@@ -49,6 +49,12 @@ def test_create(options, task_service):
     task_service.add.assert_called_with(name=options[1])
 
 
+def test_rename(task_service):
+    options = ['rename', 'foo', 'bar']
+    tt.cli.main(options)
+    task_service.rename.assert_called_with(old_name='foo', new_name='bar')
+
+
 @pytest.mark.parametrize('options', [
     ['tasks'],
 ])

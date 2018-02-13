@@ -27,6 +27,22 @@ def create(name):
         raise ValidationError("A task with name %s already exists" % name)
 
 
+def get(name):
+    with transaction() as session:
+        return session.query(Task).filter(Task.name == name).one()
+
+
+def update(id, name=None):
+    log.debug('updating task %s with name=%s', id, name)
+
+    try:
+        with transaction() as session:
+            task = session.query(Task).get(id)
+            task.name = name
+    except IntegrityError:
+        raise ValidationError("A task with name %s already exists" % name)
+
+
 def tasks():
     with transaction() as session:
         for task in session.query(Task).all():

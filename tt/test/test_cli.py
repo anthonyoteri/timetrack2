@@ -16,7 +16,7 @@ from tt.exc import ParseError
 @pytest.fixture
 def task_service(mocker):
     init = mocker.patch('tt.cli.TaskService')
-    service = mocker.Mock()
+    service = mocker.MagicMock()
     init.return_value = service
     return service
 
@@ -24,7 +24,7 @@ def task_service(mocker):
 @pytest.fixture
 def timer_service(mocker):
     init = mocker.patch('tt.cli.TimerService')
-    service = mocker.Mock()
+    service = mocker.MagicMock()
     init.return_value = service
     return service
 
@@ -73,7 +73,7 @@ def test_remove(options, mocker, task_service):
 @mock.patch('dateparser.parse')
 def test_start(parse, options, mocker, timer_service):
 
-    timestamp = mocker.Mock()
+    timestamp = mocker.MagicMock(spec=datetime)
     parse.return_value = timestamp
 
     tt.cli.main(options)
@@ -92,7 +92,7 @@ def test_start(parse, options, mocker, timer_service):
 @mock.patch('dateparser.parse')
 def test_stop(parse, options, mocker, timer_service):
 
-    timestamp = mocker.Mock()
+    timestamp = mocker.MagicMock(spec=datetime)
     parse.return_value = timestamp
 
     tt.cli.main(options)
@@ -115,8 +115,8 @@ def test_summary(parse, options, mocker, timer_service):
     timer_service.summary.return_value = (['foo', timedelta(hours=1)],
                                           ['bar', timedelta(hours=2)])
 
-    begin = mocker.Mock()
-    end = mocker.Mock()
+    begin = mocker.MagicMock(spec=datetime)
+    end = mocker.MagicMock(spec=datetime)
     parse.side_effect = (begin, end)
 
     tt.cli.main(options)
@@ -144,15 +144,19 @@ def test_summary(parse, options, mocker, timer_service):
 @mock.patch('dateparser.parse')
 def test_records(parse, options, mocker, timer_service):
     timer_service.records.return_value = ([
-        1, 'foo', mocker.Mock(),
-        mocker.Mock(),
+        1, 'foo',
+        mocker.MagicMock(spec=datetime),
+        mocker.MagicMock(spec=datetime),
         timedelta(hours=1)
-    ], [1, 'bar', mocker.Mock(),
-        mocker.Mock(),
-        timedelta(hours=2)])
+    ], [
+        1, 'bar',
+        mocker.MagicMock(spec=datetime),
+        mocker.MagicMock(spec=datetime),
+        timedelta(hours=2)
+    ])
 
-    begin = mocker.Mock()
-    end = mocker.Mock()
+    begin = mocker.MagicMock(spec=datetime)
+    end = mocker.MagicMock(spec=datetime)
     parse.side_effect = (begin, end)
 
     tt.cli.main(options)
@@ -245,7 +249,7 @@ def test_import(load, mock_open, source):
 
 @mock.patch('dateparser.parse')
 def test_parse_timestamp(parse, mocker):
-    timestamp = mocker.Mock()
+    timestamp = mocker.MagicMock(spec=datetime)
 
     parse.return_value = timestamp
 

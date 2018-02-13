@@ -1,33 +1,35 @@
 # Copyright (C) 2018, Anthony Oteri
 # All rights reserved
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+import io
 
 import pytest
 from unittest import mock
 
+import tt.service
 from tt.exc import ValidationError
 from tt.io import dump, load
 
 
 @pytest.fixture
 def timer_service(mocker):
-    return mocker.Mock()
+    return mocker.MagicMock(spec=tt.service.TimerService)
 
 
 @pytest.fixture
 def task_service(mocker):
-    return mocker.Mock()
+    return mocker.MagicMock(spec=tt.service.TaskService)
 
 
 @mock.patch('json.dump')
 def test_dump(json_dump, timer_service, mocker):
 
-    out = mocker.Mock()
-    start = mocker.Mock()
+    out = mocker.MagicMock(spec=io.TextIOWrapper)
+    start = mocker.MagicMock(spec=datetime)
     start.isoformat.return_value = '2018-01-01T00:00:00Z'
-    stop = mocker.Mock()
-    elapsed = mocker.Mock()
+    stop = mocker.MagicMock(spec=datetime)
+    elapsed = mocker.MagicMock(spec=timedelta)
     elapsed.total_seconds.return_value = 600.0
 
     timer_service.records.return_value = [(1, 'foo', start, stop, elapsed)]
@@ -42,7 +44,7 @@ def test_dump(json_dump, timer_service, mocker):
     }, out)
 
 
-def test_load(task_service, timer_service, mocker):
+def test_load(task_service, timer_service):
 
     lines = [
         '{"task": "foo", "start": "2018-01-01T00:00:00Z", "elapsed": 600}\n',
@@ -58,7 +60,7 @@ def test_load(task_service, timer_service, mocker):
         timestamp=datetime(2018, 1, 1, 0, 10, 0, tzinfo=timezone.utc))
 
 
-def test_load_duplicate_task(task_service, timer_service, mocker):
+def test_load_duplicate_task(task_service, timer_service):
 
     lines = [
         '{"task": "foo", "start": "2018-01-01T00:00:00Z", "elapsed": 600}\n',

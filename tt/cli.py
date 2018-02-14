@@ -3,8 +3,10 @@
 
 import argparse
 import calendar
+import contextlib
 from datetime import datetime, timedelta, timezone
 import logging
+import os
 import sys
 
 import dateparser
@@ -23,6 +25,7 @@ DEFAULT_REPORT_END = "now"
 DATEPARSER_SETTINGS = {'TO_TIMEZONE': 'UTC', 'RETURN_AS_TIMEZONE_AWARE': True}
 DEFAULT_TABLE_FORMAT = 'simple'
 DEFAULT_TABLE_HEADER_FORMATTER = str.capitalize
+APP_DATA_DIR = "~/.timetrack2"
 
 
 def main(argv=sys.argv[1:]):
@@ -114,7 +117,11 @@ def main(argv=sys.argv[1:]):
     args = parser.parse_args(argv)
     configure_logging(args.verbose)
 
-    connect(echo=args.verbose)
+    db_file = os.path.expanduser(os.path.join(APP_DATA_DIR, "timetrack2.db"))
+    with contextlib.suppress(FileExistsError):
+        os.makedirs(os.path.dirname(db_file))
+
+    connect(db_url="sqlite:///%s" % db_file, echo=args.verbose)
     args.func(args)
 
 

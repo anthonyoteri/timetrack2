@@ -10,6 +10,17 @@ from tt.exc import ValidationError
 
 
 def dump(service, out):
+    """
+    Create a dump file of each record in JSON format.
+
+    The generated file contains one record per line, e.g.
+
+    {"task": "foo", "start": "2018-02-14T00:00:00+00:00", "elapsed": 300}
+    {"task": "bar", "start": "2018-02-14T00:05:00+00:00", "elapsed": 600}
+
+    :param service: The TimerService instance
+    :param out: A file-like object where to dump the records.
+    """
     begin = datetime(1970, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
     end = datetime.now(timezone.utc)
 
@@ -25,6 +36,21 @@ def dump(service, out):
 
 
 def load(task_service, timer_service, lines):
+    """
+    Load records from a dump.
+
+    Each line should contain a JSON formatted string containing the following
+    fields:
+
+    * "task" - The name of the task
+    * "start" - An iso8601 formatted date string including the timezone.
+    * "elapsed" - The integer number of seconds.
+
+    :param task_service: The TaskService instance
+    :param timer_service: The TimerService instance
+    :param lines: An iterable of json-formatted lines, each containing one
+                  record.
+    """
 
     for line in lines:
         obj = json.loads(line.strip())

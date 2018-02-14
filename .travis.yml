@@ -13,9 +13,9 @@ python:
   - nightly
 
 install:
+  - pip install coveralls
   - pip install -r requirements.txt
   - pip install -r requirements-test.txt
-  - pip install -r requirements-lint.txt
   - pip install -e .
 
 script:

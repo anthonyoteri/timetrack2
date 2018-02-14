@@ -15,10 +15,11 @@ log = logging.getLogger(__name__)
 
 
 def create(task, start):
-    """Creat a timer for the given task.
+    """Create a new timer for the given task.
 
-    :param str task: The name of an existing task.
-    :param datetime.datetime start: The start time.
+    :param str: task: The name of an existing task.
+    :param datetime.datetime start: The UTC starting time.
+    :raises: ValidationError If the timer fails to validate.
     """
 
     with transaction() as session:
@@ -39,6 +40,15 @@ def create(task, start):
 
 
 def update(id, task=None, start=None, stop=None):
+    """
+    Update one or more fields of a given timer.
+
+    :param id: The ID of the existing timer.
+    :param task:  The new task name. (Default value = None)
+    :param start:  The new start time. (Default value = None)
+    :param stop:  The new stop time. (Default value = None)
+    :raises: ValidationError if the timer fails validation checks.
+    """
     with transaction() as session:
         try:
             timer = session.query(Timer).get(id)
@@ -71,7 +81,8 @@ def _validate(timer):
         * If there is a stop time, it must be in the past
         * If there is a stop time, the start time must come first
 
-    Raises AssertionError: If any of the above conditions are not met.
+    :param timer:  The timer to validate.
+    :raises: AssertionError if the validation conditions are not met.
     """
 
     now = datetime.now(timezone.utc)
@@ -83,22 +94,41 @@ def _validate(timer):
 
 
 def remove(id):
+    """
+    Remove an existing timer.
+
+    :param id: The id of the timer to delete.
+    """
     with transaction() as session:
         session.query(Timer).filter(Timer.id == id).delete()
 
 
 def active():
+    """Fetch the active timer if there is one, or None if not."""
     with transaction() as session:
         return session.query(Timer).filter(Timer.stop.is_(None)).one_or_none()
 
 
 def timers():
+    """Generator for iterating over all timers."""
     with transaction() as session:
         for timer in session.query(Timer).all():
             yield timer
 
 
 def timers_by_timerange(start, end=datetime.now(timezone.utc)):
+    """
+    Generate a list of timers which fall between the given start and end
+    dates.
+
+    :param start: The datetime.datetime representing the start of the
+                  timerange (inclusive)
+    :param end:  The datetime.datetime representing the end of the
+                 timerange (exclusive)
+                 (Default value = datetime.now(timezone.utc)
+    :yields: A tuple of (id, task, start, stop, elapsed) for each timer
+             which falls within the given timerange.
+    """
     with transaction() as session:
         for timer in session.query(Timer).filter(start < Timer.start,
                                                  Timer.start <= end).all():
@@ -107,6 +137,17 @@ def timers_by_timerange(start, end=datetime.now(timezone.utc)):
 
 
 def groups_by_timerange(start, end=datetime.now(timezone.utc)):
+    """
+    Construct a summary for the timers within the given timerange.
+
+    :param start: The datetime.datetime representing the start of the
+                  timerange (inclusive)
+    :param end:  The datetime.datetime representing the end of the
+                 timerange (exclusive)
+                 (Default value = datetime.now(timezone.utc)
+    :yields: A tuple of (task, elapsed) for each task in the given
+             timerange.
+    """
 
     with transaction() as session:
 
@@ -128,7 +169,22 @@ def groups_by_timerange(start, end=datetime.now(timezone.utc)):
 
 
 def aggregate_by_task_date(start, end):
+    """
+    Fetch data about tasks per day in a given timerange.
 
+    An example return object is as follows:
+
+    {"task1": {date(2018, 2, 1): timedelta()},
+     "task2": {date(2018, 2, 1): timedelta()}}
+
+    :param start: The datetime.datetime representing the start of the
+                  timerange. (inclusive)
+    :param end: The datetime.datetime representing the end of the timerange
+                (exclusive)
+
+    :returns: A nested dictionary of tasks containing the total elapsed time
+              spent per day.
+    """
     data = collections.defaultdict(lambda: collections.defaultdict(timedelta))
 
     with transaction() as session:

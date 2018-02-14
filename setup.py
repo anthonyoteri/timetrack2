@@ -2,6 +2,8 @@
 
 from setuptools import setup, find_packages
 
+import tt
+
 install_requires = [
     'dateparser',
     'iso8601',
@@ -16,7 +18,6 @@ setup_requires = [
 ]
 
 tests_require = [
-    'python-coveralls',
     'pytest',
     'pytest-cov',
     'pytest-mock',
@@ -27,10 +28,10 @@ console_scripts = [
 ]
 
 setup(name='timetrack2',
-      version='1.0.0',
+      version=tt.__VERSION__,
       description='Simple time tracker',
-      author='Anthony Oteri',
-      author_email='anthony.oteri@gmail.com',
+      author=tt.__AUTHOR__,
+      author_email=tt.__AUTHOR_EMAIL__,
       packages=find_packages(),
       include_package_data=True,
       setup_requires=setup_requires,

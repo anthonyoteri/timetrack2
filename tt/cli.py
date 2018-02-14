@@ -28,7 +28,7 @@ DEFAULT_TABLE_HEADER_FORMATTER = str.capitalize
 APP_DATA_DIR = "~/.timetrack2"
 
 
-def main(argv=sys.argv[1:]):
+def main(argv=None):
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-v', '--verbose', action='store_true')
@@ -114,7 +114,7 @@ def main(argv=sys.argv[1:]):
     import_parser.add_argument('source', help='Source filename or - for stdin')
     import_parser.set_defaults(func=do_import)
 
-    args = parser.parse_args(argv)
+    args = parser.parse_args(argv or sys.argv[1:])
     configure_logging(args.verbose)
 
     db_file = os.path.expanduser(os.path.join(APP_DATA_DIR, "timetrack2.db"))
@@ -126,6 +126,12 @@ def main(argv=sys.argv[1:]):
 
 
 def configure_logging(verbose=False):
+    """
+    Initialize and configure the logging.
+
+    :param verbose: Use debug level logging. (Default value = False)
+
+    """
     if verbose:
         logging.basicConfig(level=logging.DEBUG)
     else:
@@ -155,7 +161,7 @@ def do_tasks(args):
     log.info('list tasks')
     service = TaskService()
 
-    headers = _format_headers(['task', 'description'])
+    headers = ['task', 'description']
     print(_make_table(service.list(), headers=headers))
 
 
@@ -185,7 +191,7 @@ def do_summary(args):
     log.info('presenting summary from %s to %s', begin, end)
 
     service = TimerService()
-    headers = _format_headers(['task', 'elapsed'])
+    headers = ['task', 'elapsed']
     table = service.summary(range_begin=begin, range_end=end)
     print(_make_table(table, headers=headers))
 
@@ -197,7 +203,7 @@ def do_records(args):
 
     service = TimerService()
 
-    headers = _format_headers(['id', 'task', 'start', 'stop', 'elapsed'])
+    headers = ['id', 'task', 'start', 'stop', 'elapsed']
     table = service.records(range_begin=begin, range_end=end)
     print(_make_table(table, headers=headers))
 
@@ -224,25 +230,59 @@ def do_report(args):
 
 
 def _make_table(rows, headers):
+    """
+    Generate a printable table containing.
+
+    :param rows: A list of lists or iterable of iterables containing
+                 the data to be displayed.
+    :param headers: A list or iterable of headers for each row.  If
+                    there are fewer headers than there are columns,
+                    they will align to the rightmost columns.
+    :returns: A printable table.
+    """
+
     def convert(raw):
+        """
+        Apply any string manipulation to make the raw value suitable for
+        display.
+
+        Python datetimes should be converted to the user's local time.
+
+        :param raw: The raw object value.
+        :returns: A string suitable for formatting.
+        """
         if isinstance(raw, datetime):
             return local_time(raw).replace(tzinfo=None)
         if isinstance(raw, timedelta):
             return timedelta_to_string(raw)
         return raw
 
+    def format_headers(headers, formatter=DEFAULT_TABLE_HEADER_FORMATTER):
+        """
+        Apply consistent formatting to each of the header strings.
+
+        :param headers:  A list or iterable of the header columns.
+        :param formatter:  A function to apply to each header string.
+                           (Default value = DEFAULT_TABLE_HEADER_FORMATTER)
+        :yields: A string for each column header.
+        """
+        for h in headers:
+            yield formatter(h)
+
     table = [[convert(c) for c in r] for r in rows]
 
     return tabulate(
-        table, headers=_format_headers(headers), tablefmt=DEFAULT_TABLE_FORMAT)
-
-
-def _format_headers(headers, formatter=DEFAULT_TABLE_HEADER_FORMATTER):
-    for h in headers:
-        yield formatter(h)
+        table, headers=format_headers(headers), tablefmt=DEFAULT_TABLE_FORMAT)
 
 
 def _parse_timestamp(timestamp_in):
+    """
+    Parse flexible timestamp strings, like "tomorrow at 8am".
+
+    :param timestamp_in: A string description of the time.
+    :returns: A timezone aware python datetime object.
+    :raises: ParseError if the timestamp string is not parsable.
+    """
     timestamp_out = dateparser.parse(
         timestamp_in,
         settings=DATEPARSER_SETTINGS,

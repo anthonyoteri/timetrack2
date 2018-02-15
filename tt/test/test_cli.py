@@ -9,6 +9,7 @@ from unittest import mock
 
 import pytest
 
+import tt
 import tt.cli
 from tt.exc import ParseError
 
@@ -27,6 +28,12 @@ def timer_service(mocker):
     service = mocker.MagicMock()
     init.return_value = service
     return service
+
+
+@mock.patch('tt.cli.print')
+def test_version(mock_print):
+    tt.cli.main(['--version'])
+    mock_print.assert_called_with('Timetrack2-%s' % tt.__VERSION__)
 
 
 @pytest.mark.parametrize('verbose', [True, False])

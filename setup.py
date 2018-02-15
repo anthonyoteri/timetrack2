@@ -29,7 +29,7 @@ console_scripts = [
 
 setup(name='timetrack2',
       version=tt.__VERSION__,
-      description='Simple time tracker',
+      description=tt.__DESCRIPTION__,
       author=tt.__AUTHOR__,
       author_email=tt.__AUTHOR_EMAIL__,
       packages=find_packages(),

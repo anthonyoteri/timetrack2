@@ -206,7 +206,7 @@ def test_report(agg, mocker, timer_service):
         timer_service.report(range_begin=range_begin, range_end=range_end))[0]
 
     expected_header = [
-        'task name',
+        ' ' * 16,
         '2018-02-05',
         '2018-02-06',
         '2018-02-07',
@@ -228,12 +228,9 @@ def test_report(agg, mocker, timer_service):
         timedelta(hours=6), None, None,
         timedelta(hours=13)
     ], [
-        'TOTAL',
-        timedelta(0),
+        'TOTAL', None,
         timedelta(hours=8),
-        timedelta(hours=8),
-        timedelta(0),
-        timedelta(0),
+        timedelta(hours=8), None, None,
         timedelta(hours=16)
     ]]
 

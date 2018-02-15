@@ -43,6 +43,7 @@ Base = declarative_base(cls=_Base)
 
 @contextlib.contextmanager
 def transaction():
+    """Access the session."""
     session = Session()
     try:
         yield session
@@ -55,6 +56,14 @@ def transaction():
 
 
 def connect(db_url='sqlite:///timetrack.db', echo=False):
+    """
+    Create a persistent connection to the given database.
+
+    :param db_url:  The URL to the database.
+                    (Default value = 'sqlite:///timetrack.db')
+    :param echo:  Log all interactions with the database.
+                  (Default value = False)
+    """
     log.info("Connecting to database %s", db_url)
 
     engine = create_engine(

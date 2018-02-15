@@ -10,7 +10,7 @@ import os
 import sys
 
 import dateparser
-from tabulate import tabulate
+import tabulate
 
 import tt
 from tt.exc import ParseError
@@ -24,9 +24,11 @@ log = logging.getLogger('tt.cli')
 DEFAULT_REPORT_START = "midnight"
 DEFAULT_REPORT_END = "tomorrow at midnight"
 DATEPARSER_SETTINGS = {'TO_TIMEZONE': 'UTC', 'RETURN_AS_TIMEZONE_AWARE': True}
-DEFAULT_TABLE_FORMAT = 'simple'
+DEFAULT_TABLE_FORMAT = 'fancy_grid'
 DEFAULT_TABLE_HEADER_FORMATTER = str.capitalize
 APP_DATA_DIR = "~/.timetrack2"
+
+tabulate.PRESERVE_WHITESPACE = True
 
 
 def main(argv=None):
@@ -284,7 +286,7 @@ def _make_table(rows, headers):
 
     table = [[convert(c) for c in r] for r in rows]
 
-    return tabulate(
+    return tabulate.tabulate(
         table, headers=format_headers(headers), tablefmt=DEFAULT_TABLE_FORMAT)
 
 

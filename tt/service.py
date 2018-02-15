@@ -157,7 +157,7 @@ class TimerService(object):
                 str(d.date())
                 for d in tt.datetime.range_weekdays(week_start, week_end)
             ]
-            headers = ['task name'] + dates + ['Total']
+            headers = [" " * 16] + dates + ['Total']
             rows = []
             for task in weekly_data:
                 log.debug('Columns for task %s %s', task,
@@ -177,9 +177,9 @@ class TimerService(object):
                     seconds=sum([
                         c.total_seconds() for c in r
                         if isinstance(c, timedelta)
-                    ]) or 0) for r in zip(*rows)
+                    ]) or 0) or None for r in zip(*rows)
             ][1:]
-            totals = totals or [timedelta(0)] * 7
+            totals = totals or [None] * 6
 
             log.debug("len totals %d, totals %s", len(totals), totals)
 

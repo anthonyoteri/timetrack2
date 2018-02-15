@@ -21,8 +21,8 @@ from tt.datetime import local_time, timedelta_to_string
 
 log = logging.getLogger('tt.cli')
 
-DEFAULT_REPORT_START = "monday at midnight UTC"
-DEFAULT_REPORT_END = "now"
+DEFAULT_REPORT_START = "midnight"
+DEFAULT_REPORT_END = "tomorrow at midnight"
 DATEPARSER_SETTINGS = {'TO_TIMEZONE': 'UTC', 'RETURN_AS_TIMEZONE_AWARE': True}
 DEFAULT_TABLE_FORMAT = 'simple'
 DEFAULT_TABLE_HEADER_FORMATTER = str.capitalize
@@ -197,6 +197,10 @@ def do_summary(args):
     log.info('presenting summary from %s to %s', begin, end)
 
     service = TimerService()
+
+    print("Summary from %s to %s" % (local_time(begin).replace(tzinfo=None),
+                                     local_time(end).replace(tzinfo=None)))
+
     headers = ['task', 'elapsed']
     table = service.summary(range_begin=begin, range_end=end)
     print(_make_table(table, headers=headers))
@@ -208,6 +212,9 @@ def do_records(args):
     log.info('presenting records from %s to %s', begin, end)
 
     service = TimerService()
+
+    print("Records from %s to %s" % (local_time(begin).replace(tzinfo=None),
+                                     local_time(end).replace(tzinfo=None)))
 
     headers = ['id', 'task', 'start', 'stop', 'elapsed']
     table = service.records(range_begin=begin, range_end=end)

@@ -3,20 +3,14 @@ language: python
 # Use containers instead of full VMs for faster startup.
 sudo: false
 
-matrix:
-  fast_finish: true
-  allow_failures:
-    - python: nightly
-
 python:
   - 3.6
-  - nightly
 
 install:
-  - pip install coveralls
   - pip install -r requirements.txt
   - pip install -r requirements-test.txt
-  - pip install -e .
+  - pip install coveralls
+  - pip install .
 
 script:
   - python setup.py test

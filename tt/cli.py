@@ -12,6 +12,7 @@ import sys
 import dateparser
 from tabulate import tabulate
 
+from tt import __VERSION__
 from tt.exc import ParseError
 import tt.io
 from tt.sql import connect
@@ -29,9 +30,10 @@ APP_DATA_DIR = "~/.timetrack2"
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="A time tracking utility")
 
     parser.add_argument('-v', '--verbose', action='store_true')
+    parser.add_argument('-V', '--version', action='store_true')
 
     subparsers = parser.add_subparsers()
 
@@ -115,6 +117,10 @@ def main(argv=None):
     import_parser.set_defaults(func=do_import)
 
     args = parser.parse_args(argv or sys.argv[1:])
+    if args.version:
+        print("Timetrack2-%s" % __VERSION__)
+        return 0
+
     configure_logging(args.verbose)
 
     db_file = os.path.expanduser(os.path.join(APP_DATA_DIR, "timetrack2.db"))

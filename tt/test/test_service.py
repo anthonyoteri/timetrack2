@@ -159,7 +159,7 @@ def test_summary(groups_by_timerange, mocker, timer_service):
     actual = list(timer_service.summary(range_begin=begin, range_end=end))
 
     groups_by_timerange.assert_called_with(start=begin, end=end)
-    assert actual == expected
+    assert actual == expected + [('TOTAL', timedelta(hours=3))]
 
 
 @mock.patch('tt.timer.timers_by_timerange')

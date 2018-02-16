@@ -99,9 +99,12 @@ class TimerService(object):
         :param range_end:  The timezone-aware end time (exclusive)
         :yields: A tuple of (task, elapsed) for each task.
         """
+        total = timedelta(0)
         for task, elapsed in tt.timer.groups_by_timerange(
                 start=range_begin, end=range_end):
+            total += elapsed
             yield task, elapsed
+        yield "TOTAL", total
 
     def records(self, range_begin=None, range_end=None):
         """

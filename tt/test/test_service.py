@@ -199,19 +199,21 @@ def test_report(agg, mocker, timer_service):
 
     agg.return_value = weekly_data
 
-    range_begin = date(2018, 2, 5)
-    range_end = date(2018, 2, 8)
+    range_begin = datetime(2018, 2, 5)
+    range_end = datetime(2018, 2, 8)
 
     header, table = list(
         timer_service.report(range_begin=range_begin, range_end=range_end))[0]
 
+    agg.assert_called_once_with(start=range_begin, end=range_end)
+
     expected_header = [
         ' ' * 16,
-        '2018-02-05',
-        '2018-02-06',
-        '2018-02-07',
-        '2018-02-08',
-        '2018-02-09',
+        'Feb 05',
+        'Feb 06',
+        'Feb 07',
+        'Feb 08',
+        'Feb 09',
         'Total',
     ]
 

@@ -24,6 +24,7 @@ $(DIST): build $(DOC)
 	$(VIRTUALENV)/bin/python setup.py sdist
 	$(VIRTUALENV)/bin/python setup.py bdist_wheel
 
+.PHONY: $(DOC)
 $(DOC): $(VIRTUALENV) requirements-doc.txt requirements-test.txt $(DOC)/*.rst $(PYTHON_PACKAGE)
 	$(VIRTUALENV)/bin/pip install -r requirements-doc.txt
 	$(VIRTUALENV)/bin/pip install -r requirements-test.txt

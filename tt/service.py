@@ -139,7 +139,7 @@ class TimerService(object):
 
         Additionally, the list of header columns will be yielded. E.g.
 
-        ['Task', '2018-02-01', '2018-02-02', ..., 'Total']
+        ['Task', '02-01', '02-02', ..., 'Total']
 
         :param range_begin:  The start date for records (inclusive)
         :param range_end:  The end date for records (exclusive)
@@ -152,12 +152,12 @@ class TimerService(object):
         _, period_end = tt.datetime.week_boundaries(range_end)
 
         for week_start in tt.datetime.range_weeks(period_start, period_end):
-            week_end = week_start + timedelta(days=7)
+            _, week_end = tt.datetime.week_boundaries(week_start)
             weekly_data = tt.timer.aggregate_by_task_date(
                 start=range_begin, end=range_end)
 
             dates = [
-                str(d.date())
+                d.date().strftime('%b %d')
                 for d in tt.datetime.range_weekdays(week_start, week_end)
             ]
             headers = [" " * 16] + dates + ['Total']

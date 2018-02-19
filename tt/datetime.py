@@ -1,6 +1,8 @@
 # Copyright (C) 2018, Anthony Oteri
 # All rights reserved
 
+from datetime import timedelta
+
 import pandas
 
 from dateutil import tz
@@ -41,22 +43,27 @@ def range_weeks(start, end):
     :param end: The ending date, inclusive.
     :yields: One datetime.datetime object per week between start and end.
     """
-    for ts in pandas.date_range(start, end, freq='W-SUN'):
+    for ts in pandas.date_range(start, end, freq='W-MON'):
         yield ts.to_pydatetime()
 
 
 def week_boundaries(date):
     """
     Given a datetime.date object, return the boundaries of the week containing
-    that date.  Weeks start on Sunday and end on Saturday.
+    that date.  Weeks start on Monday and end on Sunday.
 
     :param date: A datetime.date object
     :returns: A tuple of datetime.datetime objects representing the start
               and end of the week containing the given date.
     """
-    begin = date - pandas.offsets.Week(weekday=6)
-    end = date + pandas.offsets.Week(weekday=5)
-    return begin.to_pydatetime(), end.to_pydatetime()
+    beginning = date - timedelta(days=date.weekday())
+    end = beginning + timedelta(days=6)
+
+    # Double-check that weeks are Monday - Sunday
+    assert beginning.weekday() == 0
+    assert end.weekday() == 6
+
+    return beginning, end
 
 
 def local_time(dt):

@@ -78,6 +78,8 @@ def main(argv=None):
         'time', help='timestamp', default='now', nargs='?')
     stop_parser.set_defaults(func=do_stop)
 
+    # Commands for working with reporting
+
     summary_parser = subparsers.add_parser('summary')
     summary_parser.add_argument(
         '--begin',
@@ -108,7 +110,11 @@ def main(argv=None):
         help="Month to generate report for")
     report_parser.set_defaults(func=do_report)
 
+    status_parser = subparsers.add_parser('status')
+    status_parser.set_defaults(func=do_status)
+
     # Commands for import and export
+
     export_parser = subparsers.add_parser('export')
     export_parser.add_argument(
         'destination', help='Destination filename or - for stdout')
@@ -242,6 +248,26 @@ def do_report(args):
             range_end=target_date.replace(day=last_day_of_month)):
 
         print(_make_table(table, headers=headers) + '\n')
+
+
+def do_status(args):
+    service = TimerService()
+
+    now = datetime.now(timezone.utc).replace(
+        hour=0, minute=0, second=0, microsecond=0)
+
+    week_begin, week_end = tt.datetime.week_boundaries(now)
+
+    day_begin = now
+    day_end = now + timedelta(days=1)
+
+    for headers, table in service.report(
+            range_begin=week_begin, range_end=week_end):
+        print(_make_table(table, headers=headers))
+
+    headers = ['id', 'task', 'start', 'stop', 'elapsed']
+    table = service.records(range_begin=day_begin, range_end=day_end)
+    print(_make_table(table, headers=headers))
 
 
 def _make_table(rows, headers):

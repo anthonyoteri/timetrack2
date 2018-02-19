@@ -239,21 +239,49 @@ def test_report_with_month(month, timer_service):
         range_begin=expected_begin, range_end=expected_end)
 
 
+@mock.patch('tt.cli.datetime', autospec=datetime)
+@mock.patch('tt.cli.isinstance')
+def test_status(mock_isinstance, mock_datetime, mocker, timer_service):
+    options = ['status']
+    mock_isinstance.return_value = False
+    timer_service.report.return_value = [(['foo', 'bar', 'baz', 'bam'], [
+        ['1', '2', '3', '4'],
+        ['5', '6', '7', '8'],
+    ])]
+    timer_service.records.return_value = [[
+        1, 'foo',
+        mocker.MagicMock(spec=datetime),
+        mocker.MagicMock(spec=datetime),
+        timedelta(hours=1)
+    ]]
+
+    mock_datetime.now.return_value = datetime(2018, 2, 19)
+
+    tt.cli.main(options)
+    timer_service.report.assert_called_with(
+        range_begin=datetime(2018, 2, 19), range_end=datetime(2018, 2, 25))
+
+    timer_service.records.assert_called_with(
+        range_begin=datetime(2018, 2, 19), range_end=datetime(2018, 2, 20))
+
+
 @pytest.mark.parametrize('destination', ['-', '/tmp/foo'])
 @mock.patch('tt.cli.open')
 @mock.patch('tt.io.dump')
-def test_export(dump, mock_open, destination):
+@mock.patch('sys.stdout')
+def test_export(stdout, dump, mock_open, destination):
     options = ['export', destination]
-    mock_open.return_value = mock.MagicMock(spec=io.IOBase)
+
+    out = mock.MagicMock(spec=io.IOBase)
+    mock_open.return_value = out
 
     tt.cli.main(options)
 
-    if destination == '-':
-        assert not mock_open.called
-    else:
+    if destination != '-':
         mock_open.assert_called_once_with(destination, 'w')
-
-    assert dump.called
+        dump.assert_called_once_with(mock.ANY, out.__enter__.return_value)
+    else:
+        dump.assert_called_once_with(mock.ANY, stdout)
 
 
 @pytest.mark.parametrize('source', ['-', '/tmp/foo'])

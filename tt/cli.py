@@ -4,7 +4,7 @@
 import argparse
 import calendar
 import contextlib
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 import logging
 import os
 import sys
@@ -17,7 +17,7 @@ from tt.exc import ParseError
 import tt.io
 from tt.sql import connect
 from tt.service import TaskService, TimerService
-from tt.datetime import local_time, timedelta_to_string
+from tt.datetime import local_time, timedelta_to_string, tz_local
 
 log = logging.getLogger('tt.cli')
 
@@ -206,8 +206,8 @@ def do_summary(args):
 
     service = TimerService()
 
-    print("Summary from %s to %s" % (local_time(begin).replace(tzinfo=None),
-                                     local_time(end).replace(tzinfo=None)))
+    print("Summary from %s to %s" % (begin.replace(tzinfo=None),
+                                     end.replace(tzinfo=None)))
 
     headers = ['task', 'elapsed']
     table = service.summary(range_begin=begin, range_end=end)
@@ -221,8 +221,8 @@ def do_records(args):
 
     service = TimerService()
 
-    print("Records from %s to %s" % (local_time(begin).replace(tzinfo=None),
-                                     local_time(end).replace(tzinfo=None)))
+    print("Records from %s to %s" % (begin.replace(tzinfo=None),
+                                     end.replace(tzinfo=None)))
 
     headers = ['id', 'task', 'start', 'stop', 'elapsed']
     table = service.records(range_begin=begin, range_end=end)
@@ -232,7 +232,7 @@ def do_records(args):
 def do_report(args):
     service = TimerService()
 
-    target_date = datetime.now(timezone.utc).replace(
+    target_date = datetime.now(tz_local()).replace(
         hour=0, minute=0, second=0, microsecond=0)
 
     if args.month:
@@ -253,7 +253,7 @@ def do_report(args):
 def do_status(args):
     service = TimerService()
 
-    now = datetime.now(timezone.utc).replace(
+    now = datetime.now(tz_local()).replace(
         hour=0, minute=0, second=0, microsecond=0)
 
     week_begin, week_end = tt.datetime.week_boundaries(now)
@@ -332,7 +332,7 @@ def _parse_timestamp(timestamp_in):
     if timestamp_out is None:
         raise ParseError("Unable to parse %s" % timestamp_in)
 
-    return timestamp_out.replace(microsecond=0)
+    return local_time(timestamp_out.replace(microsecond=0))
 
 
 def do_export(args):

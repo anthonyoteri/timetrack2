@@ -99,3 +99,8 @@ def timedelta_to_string(td):
     hours, remainder = divmod(int(td.total_seconds()), 3600)
     minutes, _ = divmod(remainder, 60)
     return "%02d:%02d" % (hours, minutes)
+
+
+def tz_local():
+    """Return the local timezone."""
+    return tz.tzlocal()

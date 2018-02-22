@@ -1,6 +1,12 @@
 Product Changelog
 =================
 
+1.0.2
+-----
+ * Fix: Week ranges sometimes produced wrong week for edge cases.
+ * New: Show total in summary view
+ * New: Status command
+
 1.0.1
 -----
 

@@ -16,6 +16,7 @@ A time-tracking utility.
    developers_guide
    changelog
    license
+   dependencies
 
 Indices and tables
 ==================

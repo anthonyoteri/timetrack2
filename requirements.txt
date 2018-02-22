@@ -1,6 +1,6 @@
-dateparser==0.6.0
+dateparser==0.7.0
 iso8601==0.1.12
 pandas==0.22.0
-SQLAlchemy==1.2.2
+SQLAlchemy==1.2.3
 SQLAlchemy-Utc==0.10.0
 tabulate==0.8.2

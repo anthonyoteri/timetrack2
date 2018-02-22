@@ -5,7 +5,7 @@
 SPHINXOPTS    =
 SPHINXBUILD   = ../env/bin/python ../env/bin/sphinx-build
 SPHINXPROJ    = Timetrack2
-SOURCEDIR     = .
+SOURCEDIR     = _build_root
 BUILDDIR      = _build
 
 # Put it first so that "make" without argument is like "make help".

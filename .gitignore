@@ -8,3 +8,11 @@ env/
 coverage.xml
 htmlcov/
 junitxml-result.xml
+
+build/
+doc/_build/
+doc/_build_root/
+doc/dependencies.rst
+doc/modules.rst
+doc/tt.rst
+doc/tt.test.rst

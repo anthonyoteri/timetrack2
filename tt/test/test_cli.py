@@ -2,7 +2,7 @@
 # All rights reserved.
 
 import calendar
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 import logging
 import io
 from unittest import mock
@@ -11,6 +11,7 @@ import pytest
 
 import tt
 import tt.cli
+from tt.datetime import tz_local
 from tt.exc import ParseError
 
 
@@ -111,7 +112,7 @@ def test_start(parse, options, mocker, timer_service):
         parse.assert_called_with('now', settings=tt.cli.DATEPARSER_SETTINGS)
 
     timer_service.start.assert_called_with(
-        task=options[1], timestamp=timestamp.replace())
+        task=options[1], timestamp=timestamp.replace().replace().astimezone())
 
 
 @pytest.mark.parametrize('options', [['stop', 'now'], ['stop']])
@@ -129,7 +130,8 @@ def test_stop(parse, options, mocker, timer_service):
     else:
         parse.assert_called_with('now', settings=tt.cli.DATEPARSER_SETTINGS)
 
-    timer_service.stop.assert_called_with(timestamp=timestamp.replace())
+    timer_service.stop.assert_called_with(
+        timestamp=timestamp.replace().replace().astimezone())
 
 
 @pytest.mark.parametrize(
@@ -160,7 +162,8 @@ def test_summary(parse, options, mocker, timer_service):
         [mock.call(ts, settings=tt.cli.DATEPARSER_SETTINGS) for ts in calls])
 
     timer_service.summary.assert_called_with(
-        range_begin=begin.replace(), range_end=end.replace())
+        range_begin=begin.replace().replace().astimezone(),
+        range_end=end.replace().replace().astimezone())
 
 
 @pytest.mark.parametrize(
@@ -200,7 +203,8 @@ def test_records(parse, options, mocker, timer_service):
         [mock.call(ts, settings=tt.cli.DATEPARSER_SETTINGS) for ts in calls])
 
     timer_service.records.assert_called_with(
-        range_begin=begin.replace(), range_end=end.replace())
+        range_begin=begin.replace().replace().astimezone(),
+        range_end=end.replace().replace().astimezone())
 
 
 def test_report(timer_service):
@@ -226,7 +230,7 @@ def test_report_with_month(month, timer_service):
 
     tt.cli.main(options)
 
-    today = datetime.now(timezone.utc).replace(
+    today = datetime.now(tz_local()).replace(
         hour=0, minute=0, second=0, microsecond=0)
     if month > today.month:
         today = today.replace(year=today.year - 1)

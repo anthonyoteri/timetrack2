@@ -7,6 +7,7 @@ import logging
 
 from sqlalchemy.orm.exc import NoResultFound
 
+from tt.datetime import local_time
 from tt.exc import ValidationError
 from tt.orm import Task, Timer
 from tt.sql import transaction
@@ -190,6 +191,7 @@ def aggregate_by_task_date(start, end):
     with transaction() as session:
         for timer in session.query(Timer).filter(start < Timer.start,
                                                  Timer.start <= end).all():
-            data[timer.task.name][timer.start.date()] += timer.elapsed
+            data[timer.task.name][local_time(
+                timer.start).date()] += timer.elapsed
 
     return data

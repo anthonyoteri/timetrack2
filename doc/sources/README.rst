@@ -7,6 +7,6 @@ A simple time tracking utility
     :target: https://travis-ci.org/anthonyoteri/timetrack2
 
 .. image:: https://coveralls.io/repos/github/anthonyoteri/timetrack2/badge.svg?branch=master
-:target: https://coveralls.io/github/anthonyoteri/timetrack2?branch=master
+    :target: https://coveralls.io/github/anthonyoteri/timetrack2?branch=master
 
 

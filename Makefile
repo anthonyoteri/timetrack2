@@ -1,5 +1,5 @@
 NAME = timetrack2
-VERSION = 1.0.2
+VERSION = 1.0.3
 
 PYTHON_PACKAGE = tt
 CONSOLE_SCRIPTS = $(VIRTUALENV)/bin/tt
@@ -22,3 +22,14 @@ DOC_TARGETS = $(DOC)/_build/html \
 	      $(DOC)/_build/man
 
 include Build.mk
+
+README_DOCS = $(DOC)/sources/README.rst \
+	      $(DOC)/sources/changelog.rst \
+	      $(DOC)/sources/users_guide.rst \
+	      $(DOC)/sources/license.rst
+
+.PHONY: readme
+readme: README.md
+
+README.md: $(README_DOCS)
+	cat $^ | pandoc -f rst -t gfm -o $@

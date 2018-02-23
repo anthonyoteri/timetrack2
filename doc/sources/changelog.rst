@@ -5,9 +5,6 @@ Product Changelog
 -----------
 
  * [ ] Fix: Use in-memory database during development
- * [X] Fix: Timezone issue while grouping records in reporting views
- * [X] Fix: CLI should always refer to times in local timezone
- * [X] Enancement: Major build system refactoring
  * [ ] New: Support for editing timer records
  * [ ] New: Integration with Homebrew for MacOS
  * [ ] New: Additional shortcut parameters for summary and reporting views
@@ -16,6 +13,13 @@ Product Changelog
 
 1.0 Stable
 ----------
+
+1.0.3
+^^^^^
+ 
+ * Fix: Timezone issue while grouping records in reporting views
+ * Fix: CLI should always refer to times in local timezone
+ * Enancement: Major build system refactoring
 
 1.0.2
 ^^^^^

@@ -1,7 +1,7 @@
 # Copyright (C) 2018, Anthony Oteri
 # All rights reserved
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import pandas
 
@@ -104,3 +104,58 @@ def timedelta_to_string(td):
 def tz_local():
     """Return the local timezone."""
     return tz.tzlocal()
+
+
+def start_of_day(dt=None):
+    """
+    Determine the start of a day.
+
+    :param dt: A datetime.datetime object.
+    :returns: The datetime representing the first second of the day.
+    """
+    if dt is None:
+        dt = datetime.now(tz_local())
+
+    return dt.replace(hour=0, minute=0, second=0, microsecond=0)
+
+
+def start_of_week(dt=None):
+    """
+    Determine the start of a week.
+
+    :param dt: A datetime.datetime object.
+    :returns: The datetime representing the first second of the week.
+    """
+    if dt is None:
+        dt = datetime.now(tz_local())
+
+    start, _ = week_boundaries(dt)
+    return start_of_day(start)
+
+
+def start_of_month(dt=None):
+    """
+    Determine the start of a month.
+
+    :param dt: A datetime.datetime object.
+    :returns: The datetime representing the first second of the month.
+    """
+
+    if dt is None:
+        dt = datetime.now(tz_local())
+
+    return start_of_day(dt.replace(day=1))
+
+
+def start_of_year(dt=None):
+    """
+    Determine the start of a year.
+
+    :param dt: A datetime.datetime object.
+    :returns: The datetime representing the first second of January 1.
+    """
+
+    if dt is None:
+        dt = datetime.now(tz_local())
+
+    return start_of_month(dt.replace(month=1))

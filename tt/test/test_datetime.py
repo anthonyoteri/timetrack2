@@ -2,6 +2,7 @@
 # All rights reserved
 
 from datetime import datetime, timedelta
+from unittest import mock
 
 from dateutil import tz
 import pandas
@@ -100,3 +101,89 @@ def test_timedelta_to_string():
 def test_timedelta_to_string_zero_padding():
     td = timedelta(hours=5, minutes=4, seconds=15)
     assert tt.datetime.timedelta_to_string(td) == "05:04"
+
+
+def test_start_of_day():
+    t = datetime.now(tz.tzlocal())
+
+    expected = t.replace(hour=0, minute=0, second=0, microsecond=0)
+    actual = tt.datetime.start_of_day(t)
+    assert expected == actual
+
+
+@mock.patch('tt.datetime.datetime')
+def test_start_of_day_no_param(mock_dt):
+    t = datetime.now(tz.tzlocal())
+
+    mock_dt.now.return_value = t
+    expected = t.replace(hour=0, minute=0, second=0, microsecond=0)
+    actual = tt.datetime.start_of_day()
+
+    assert expected == actual
+
+
+def test_start_of_week():
+    t = datetime.now(tz.tzlocal())
+
+    expected = (t - timedelta(days=t.weekday())).replace(
+        hour=0, minute=0, second=0, microsecond=0)
+    actual = tt.datetime.start_of_week(t)
+
+    assert expected == actual
+
+
+@mock.patch('tt.datetime.datetime')
+def test_start_of_week_no_param(mock_dt):
+    t = datetime.now(tz.tzlocal())
+
+    mock_dt.now.return_value = t
+
+    expected = (t - timedelta(days=t.weekday())).replace(
+        hour=0, minute=0, second=0, microsecond=0)
+    actual = tt.datetime.start_of_week()
+
+    assert expected == actual
+
+
+def test_start_of_month():
+    t = datetime.now(tz.tzlocal())
+
+    expected = t.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    actual = tt.datetime.start_of_month(t)
+
+    assert expected == actual
+
+
+@mock.patch('tt.datetime.datetime')
+def test_start_of_month_no_param(mock_dt):
+    t = datetime.now(tz.tzlocal())
+
+    mock_dt.now.return_value = t
+
+    expected = t.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    actual = tt.datetime.start_of_month()
+
+    assert expected == actual
+
+
+def test_start_of_year():
+    t = datetime.now(tz.tzlocal())
+
+    expected = t.replace(
+        month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+    actual = tt.datetime.start_of_year(t)
+
+    assert expected == actual
+
+
+@mock.patch('tt.datetime.datetime')
+def test_start_of_year_no_param(mock_dt):
+    t = datetime.now(tz.tzlocal())
+
+    mock_dt.now.return_value = t
+
+    expected = t.replace(
+        month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+    actual = tt.datetime.start_of_year()
+
+    assert expected == actual

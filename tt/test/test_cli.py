@@ -1,6 +1,7 @@
 # Copyright (C) 2017, Anthony Oteri
 # All rights reserved.
 
+import argparse
 import calendar
 from datetime import datetime, timedelta
 import logging
@@ -322,6 +323,174 @@ def test_parse_timestamp_raises_error(parse):
     parse.return_value = None
     with pytest.raises(ParseError):
         tt.cli._parse_timestamp('foo')
+
+
+@mock.patch('tt.cli.datetime')
+def test_from_timerange(mock_datetime, mocker):
+    t = datetime(2018, 2, 23, 15, 16, 00, tzinfo=tz_local())
+
+    mock_datetime.now.return_value = t
+
+    args = mocker.MagicMock()
+    args.yesterday = False
+    args.week = False
+    args.last_week = False
+    args.month = False
+    args.last_month = False
+    args.year = False
+    args.last_year = False
+
+    assert tt.cli.from_timerange(args) == (
+        datetime(2018, 2, 23, 0, 0, tzinfo=tz_local()),
+        datetime(2018, 2, 24, 0, 0, tzinfo=tz_local())
+    )
+
+
+@mock.patch('tt.cli.datetime')
+def test_from_timerange_yesterday(mock_datetime, mocker):
+    t = datetime(2018, 2, 23, 15, 16, 00, tzinfo=tz_local())
+
+    mock_datetime.now.return_value = t
+
+    args = mocker.MagicMock()
+    args.yesterday = True
+    args.week = False
+    args.last_week = False
+    args.month = False
+    args.last_month = False
+    args.year = False
+    args.last_year = False
+
+    assert tt.cli.from_timerange(args) == (
+        datetime(2018, 2, 22, 0, 0, tzinfo=tz_local()),
+        datetime(2018, 2, 23, 0, 0, tzinfo=tz_local())
+    )
+
+
+@mock.patch('tt.cli.datetime')
+def test_from_timerange_week(mock_datetime, mocker):
+    t = datetime(2018, 2, 23, 15, 16, 00, tzinfo=tz_local())
+
+    mock_datetime.now.return_value = t
+
+    args = mocker.MagicMock()
+    args.yesterday = False
+    args.week = True
+    args.last_week = False
+    args.month = False
+    args.last_month = False
+    args.year = False
+    args.last_year = False
+
+    assert tt.cli.from_timerange(args) == (
+        datetime(2018, 2, 19, 0, 0, tzinfo=tz_local()),
+        datetime(2018, 2, 26, 0, 0, tzinfo=tz_local())
+    )
+
+
+@mock.patch('tt.cli.datetime')
+def test_from_timerange_last_week(mock_datetime, mocker):
+    t = datetime(2018, 2, 23, 15, 16, 00, tzinfo=tz_local())
+
+    mock_datetime.now.return_value = t
+
+    args = mocker.MagicMock()
+    args.yesterday = False
+    args.week = False
+    args.last_week = True
+    args.month = False
+    args.last_month = False
+    args.year = False
+    args.last_year = False
+
+    assert tt.cli.from_timerange(args) == (
+        datetime(2018, 2, 12, 0, 0, tzinfo=tz_local()),
+        datetime(2018, 2, 19, 0, 0, tzinfo=tz_local())
+    )
+
+
+@mock.patch('tt.cli.datetime')
+def test_from_timerange_month(mock_datetime, mocker):
+    t = datetime(2018, 2, 23, 15, 16, 00, tzinfo=tz_local())
+
+    mock_datetime.now.return_value = t
+
+    args = mocker.MagicMock()
+    args.yesterday = False
+    args.week = False
+    args.last_week = False
+    args.month = True
+    args.last_month = False
+    args.year = False
+    args.last_year = False
+
+    assert tt.cli.from_timerange(args) == (
+        datetime(2018, 2, 1, 0, 0, tzinfo=tz_local()),
+        datetime(2018, 3, 1, 0, 0, tzinfo=tz_local())
+    )
+
+
+@mock.patch('tt.cli.datetime')
+def test_from_timerange_last_month(mock_datetime, mocker):
+    t = datetime(2018, 2, 23, 15, 16, 00, tzinfo=tz_local())
+
+    mock_datetime.now.return_value = t
+
+    args = mocker.MagicMock()
+    args.yesterday = False
+    args.week = False
+    args.last_week = False
+    args.month = False
+    args.last_month = True
+    args.year = False
+    args.last_year = False
+
+    assert tt.cli.from_timerange(args) == (
+        datetime(2018, 1, 1, 0, 0, tzinfo=tz_local()),
+        datetime(2018, 2, 1, 0, 0, tzinfo=tz_local())
+    )
+
+
+@mock.patch('tt.cli.datetime')
+def test_from_timerange_year(mock_datetime, mocker):
+    t = datetime(2018, 2, 23, 15, 16, 00, tzinfo=tz_local())
+
+    mock_datetime.now.return_value = t
+
+    args = mocker.MagicMock()
+    args.yesterday = False
+    args.week = False
+    args.last_week = False
+    args.month = False
+    args.last_month = False
+    args.year = True
+    args.last_year = False
+
+    assert tt.cli.from_timerange(args) == (
+        datetime(2018, 1, 1, 0, 0, tzinfo=tz_local()),
+        datetime(2019, 1, 1, 0, 0, tzinfo=tz_local())
+    )
+
+
+@mock.patch('tt.cli.datetime')
+def test_from_timetrange_last_year(mock_datetime, mocker):
+    t = datetime(2018, 2, 23, 15, 16, 00, tzinfo=tz_local())
+
+    mock_datetime.now.return_value = t
+
+    args = mocker.MagicMock()
+    args.yesterday = False
+    args.week = False
+    args.last_week = False
+    args.month = False
+    args.last_month = False
+    args.year = False
+    args.last_year = True
+
+    assert tt.cli.from_timerange(args) == (
+        datetime(2017, 1, 1, 0, 0, tzinfo=tz_local()),
+        datetime(2018, 1, 1, 0, 0, tzinfo=tz_local())
+    )
 
 
 def test_init():

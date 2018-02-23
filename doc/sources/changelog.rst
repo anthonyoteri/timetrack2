@@ -5,6 +5,7 @@ Product Changelog
 -----------
 
  * [ ] Fix: Use in-memory database during development
+ * [ ] Fix: Timezone issue while grouping records in reporting views
  * [X] Fix: CLI should always refer to times in local timezone
  * [X] Enancement: Major build system refactoring
  * [ ] New: Support for editing timer records

@@ -129,87 +129,67 @@ Stop takes only the optional `timestamp` field.
       value **must** be in the past, and uses the flexible format
       describe in the `start` command.
 
-Reporting
----------
 
-There are several options available when it comes to reporting.  The
-first and most basic is to simply view the raw records, the second,
-shows the total accumlative time spent per-task, and the third gives a
-montly view showing the accumulated time per task per day.
+Viewing Records
+---------------
 
-Showing Timers
-^^^^^^^^^^^^^^
+Timetrack2 supports several different ways to view timers, either as
+individual records with the `records` command, or as a summary where
+each task is listed with the total time over a given time span with the
+`summary` command.
 
-To show a table of the individual records for a given timespan use the
-`records` command::
+Views default to includeing only those records started on the current
+day.  There are several baked-in options for limiting the time range to
+the most common ranges.  These include the current and past day, week,
+month, and year.  It is also possible to specify the range manually with
+the `--begin` and `--end` flags.
 
-    $> tt records --begin "Monday at midnight" --end "now"
+Views can take the following set of options:
+  * `--begin [time]` -- Custom timestamp (inclusive), Default "Midnight"
+  * `--end [time]` -- Custom timestamp (exclusive), Default "Now"
+  * `--yesterday` -- Include only timers started yesterday
+  * `--week` -- Include only timers started this week
+  * `--last-week` -- Include only timers started last week
+  * `--month` -- Include only timers started this month
+  * `--last-month` -- Include only timers start last month
+  * `--year` -- Include only timers started this year
+  * `--last-year` -- Include only timers started last year
 
-The options `--begin` and `--end` take optional timestamp strings, to
-limit the list of records to only those within a given range.  The
-`--begin` option is inclusive while the `--end` option is not.  If not
-provided, they default to showing the records for the current week.
+Examples
+^^^^^^^^
 
-The table will contain the following columns for each record:
+To view a summary of the current day's records::
 
-   * Id -- The internal ID for the timer record
-   * Task -- The name of the associated task
-   * Start -- The timestamp when the timer was started (in the current
-     timezone)
-   * Stop -- The timestamp when the timer was stopped, if the timer was
-     stopped.
-   * Elapsed -- Either the duration of the timer if it has been stopped
-     or the current elapsed time if it is active.
+    $> tt summary
 
-An example of the output is as follows:
+To view the current days records::
 
-+-----+---------+----------------------+---------------------+-----------+
-| ID  |  Task   |  Start               |  Stop               |  Elapsed  |
-+-----+---------+----------------------+---------------------+-----------+
-| 12  |  foo    |  2018-02-04 09:00:00 | 2018-02-04 11:35:00 |     02:35 |
-+-----+---------+----------------------+---------------------+-----------+
-| 13  |  bar    |  2018-02-04 11:40:00 | 2018-02-04 12:00:00 |     00:20 |
-+-----+---------+----------------------+---------------------+-----------+
-| 14  |  foo    |  2018-02-04 12:00:00 | 2018-02-04 17:35:00 |     05:35 |
-+-----+---------+----------------------+---------------------+-----------+
+    $> tt records
 
-Showing Task Totals
-^^^^^^^^^^^^^^^^^^^
+To view the summary for yesterday::
 
-To show a table of the accumulated total time spent on each task during
-a given timespan use the `summary` command::
+    $> tt summary --yesterday
 
-    $> tt summary --begin "Monday at midnight" --end "now"
+To view the summary for last week::
 
-This takes the same `--begin` and `--end` optional timestamps as the
-`records` command, and will limit the timers used in the calculation to
-only those records which were started between these timers.  The
-`--begin` option is inclusive while the `--end` option is not.  If not
-provided, they default to showing the totals for the current week.
+    $> tt summary --last-week
 
-The table will contain the following columns for each task:
+To view records from midnight to 11am::
 
-    * Task -- The name of the task
-    * Elapsed -- The total time of all timers within the timespan,
-      including the elapsed time of any running timers.
+    $> tt records --end '11 am'
 
-An example of the output is as follows:
+To view records from 11 am::
 
-+--------+-----------+
-| Task   |   Elapsed |
-+--------+-----------+
-| foo    |    02:52  |
-+--------+-----------+
-| bar    |    11:03  |
-+--------+-----------+
-| baz    |    00:15  |
-+--------+-----------+
-| TOTAL  |    14:35  |
-+--------+-----------+
+    $> tt records --begin '11 am'
+
+to view a summary for the first quarter of 2018::
+
+    $> tt records --begin 'jan 1 2018 at midnight' \
+       --end 'april 1 2018 at midnight'
 
 
-Showing Monthly Report
-^^^^^^^^^^^^^^^^^^^^^^
+Monthly Reporting
+-----------------
 
 The monthly report will break down a month into weeks, showing one grid
 per week, where the rows represent the tasks worked on during that week,
@@ -245,11 +225,12 @@ An example of the reporting output is:
 +---------+--------+--------+--------+--------+--------+-------+
 
 
-Showing Status Report
-^^^^^^^^^^^^^^^^^^^^^
+Status Report
+-------------
 
-On any given day, it is possible to view the status reporting for that day by
-issuing the `status` command.  The `status` command does not take any arguments.
+On any given day, it is possible to view the status reporting for that
+day by issuing the `status` command.  The `status` command does not take
+any arguments.
 
 To show today's status report use the `status` command::
 

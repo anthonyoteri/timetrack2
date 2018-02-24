@@ -163,165 +163,64 @@ Stop takes only the optional timestamp field.
 >     **must** be in the past, and uses the flexible format describe in
 >     the start command.
 
-## Reporting
+## Viewing Records
 
-There are several options available when it comes to reporting. The
-first and most basic is to simply view the raw records, the second,
-shows the total accumlative time spent per-task, and the third gives a
-montly view showing the accumulated time per task per day.
+Timetrack2 supports several different ways to view timers, either as
+individual records with the records command, or as a summary where each
+task is listed with the total time over a given time span with the
+summary command.
 
-### Showing Timers
+Views default to includeing only those records started on the current
+day. There are several baked-in options for limiting the time range to
+the most common ranges. These include the current and past day, week,
+month, and year. It is also possible to specify the range manually with
+the --begin and --end flags.
 
-To show a table of the individual records for a given timespan use the
-records command:
+  - Views can take the following set of options:
+    
+      - \--begin \[time\] -- Custom timestamp (inclusive), Default
+        "Midnight"
+      - \--end \[time\] -- Custom timestamp (exclusive), Default "Now"
+      - \--yesterday -- Include only timers started yesterday
+      - \--week -- Include only timers started this week
+      - \--last-week -- Include only timers started last week
+      - \--month -- Include only timers started this month
+      - \--last-month -- Include only timers start last month
+      - \--year -- Include only timers started this year
+      - \--last-year -- Include only timers started last year
 
-    $> tt records --begin "Monday at midnight" --end "now"
+### Examples
 
-The options --begin and --end take optional timestamp strings, to limit
-the list of records to only those within a given range. The --begin
-option is inclusive while the --end option is not. If not provided, they
-default to showing the records for the current week.
+To view a summary of the current day's records:
 
-The table will contain the following columns for each record:
+    $> tt summary
 
->   - Id -- The internal ID for the timer record
->   - Task -- The name of the associated task
->   - Start -- The timestamp when the timer was started (in the current
->     timezone)
->   - Stop -- The timestamp when the timer was stopped, if the timer was
->     stopped.
->   - Elapsed -- Either the duration of the timer if it has been stopped
->     or the current elapsed time if it is active.
+To view the current days records:
 
-An example of the output is as follows:
+    $> tt records
 
-<table style="width:100%;">
-<colgroup>
-<col style="width: 8%" />
-<col style="width: 13%" />
-<col style="width: 31%" />
-<col style="width: 30%" />
-<col style="width: 16%" />
-</colgroup>
-<tbody>
-<tr class="odd">
-<td>ID</td>
-<td><blockquote>
-<p>Task</p>
-</blockquote></td>
-<td><blockquote>
-<p>Start</p>
-</blockquote></td>
-<td><blockquote>
-<p>Stop</p>
-</blockquote></td>
-<td><blockquote>
-<p>Elapsed</p>
-</blockquote></td>
-</tr>
-<tr class="even">
-<td>12</td>
-<td><blockquote>
-<p>foo</p>
-</blockquote></td>
-<td><blockquote>
-<p>2018-02-04 09:00:00</p>
-</blockquote></td>
-<td>2018-02-04 11:35:00</td>
-<td><blockquote>
-<p>02:35</p>
-</blockquote></td>
-</tr>
-<tr class="odd">
-<td>13</td>
-<td><blockquote>
-<p>bar</p>
-</blockquote></td>
-<td><blockquote>
-<p>2018-02-04 11:40:00</p>
-</blockquote></td>
-<td>2018-02-04 12:00:00</td>
-<td><blockquote>
-<p>00:20</p>
-</blockquote></td>
-</tr>
-<tr class="even">
-<td>14</td>
-<td><blockquote>
-<p>foo</p>
-</blockquote></td>
-<td><blockquote>
-<p>2018-02-04 12:00:00</p>
-</blockquote></td>
-<td>2018-02-04 17:35:00</td>
-<td><blockquote>
-<p>05:35</p>
-</blockquote></td>
-</tr>
-</tbody>
-</table>
+To view the summary for yesterday:
 
-### Showing Task Totals
+    $> tt summary --yesterday
 
-To show a table of the accumulated total time spent on each task during
-a given timespan use the summary command:
+To view the summary for last week:
 
-    $> tt summary --begin "Monday at midnight" --end "now"
+    $> tt summary --last-week
 
-This takes the same --begin and --end optional timestamps as the records
-command, and will limit the timers used in the calculation to only those
-records which were started between these timers. The --begin option is
-inclusive while the --end option is not. If not provided, they default
-to showing the totals for the current week.
+To view records from midnight to 11am:
 
-The table will contain the following columns for each task:
+    $> tt records --end '11 am'
 
->   - Task -- The name of the task
->   - Elapsed -- The total time of all timers within the timespan,
->     including the elapsed time of any running timers.
+To view records from 11 am:
 
-An example of the output is as follows:
+    $> tt records --begin '11 am'
 
-<table style="width:29%;">
-<colgroup>
-<col style="width: 12%" />
-<col style="width: 16%" />
-</colgroup>
-<tbody>
-<tr class="odd">
-<td>Task</td>
-<td><blockquote>
-<p>Elapsed</p>
-</blockquote></td>
-</tr>
-<tr class="even">
-<td>foo</td>
-<td><blockquote>
-<p>02:52</p>
-</blockquote></td>
-</tr>
-<tr class="odd">
-<td>bar</td>
-<td><blockquote>
-<p>11:03</p>
-</blockquote></td>
-</tr>
-<tr class="even">
-<td>baz</td>
-<td><blockquote>
-<p>00:15</p>
-</blockquote></td>
-</tr>
-<tr class="odd">
-<td>TOTAL</td>
-<td><blockquote>
-<p>14:35</p>
-</blockquote></td>
-</tr>
-</tbody>
-</table>
+to view a summary for the first quarter of 2018:
 
-### Showing Monthly Report
+    $> tt records --begin 'jan 1 2018 at midnight' \
+       --end 'april 1 2018 at midnight'
+
+## Monthly Reporting
 
 The monthly report will break down a month into weeks, showing one grid
 per week, where the rows represent the tasks worked on during that week,
@@ -406,7 +305,7 @@ An example of the reporting output is:
 </tbody>
 </table>
 
-### Showing Status Report
+## Status Report
 
 On any given day, it is possible to view the status reporting for that
 day by issuing the status command. The status command does not take any

@@ -13,11 +13,13 @@ import dateparser
 import tabulate
 
 import tt
+from tt.datetime import (local_time, start_of_day, start_of_week,
+                         start_of_month, start_of_year, timedelta_to_string,
+                         tz_local)
 from tt.exc import ParseError
 import tt.io
 from tt.sql import connect
 from tt.service import TaskService, TimerService
-from tt.datetime import local_time, timedelta_to_string, tz_local
 
 log = logging.getLogger('tt.cli')
 
@@ -82,24 +84,32 @@ def main(argv=None):
 
     summary_parser = subparsers.add_parser('summary')
     summary_parser.add_argument(
-        '--begin',
-        default=DEFAULT_REPORT_START,
-        help='Timestamp for start of reporting period (inclusive)')
+        '--begin', help='Timestamp for start of reporting period (inclusive)')
     summary_parser.add_argument(
-        '--end',
-        default=DEFAULT_REPORT_END,
-        help='Timestamp for end of reporting period (exclusive)')
+        '--end', help='Timestamp for end of reporting period (exclusive)')
+    summary_time_shortcuts = summary_parser.add_mutually_exclusive_group()
+    summary_time_shortcuts.add_argument('--yesterday', action='store_true')
+    summary_time_shortcuts.add_argument('--week', action='store_true')
+    summary_time_shortcuts.add_argument('--last-week', action='store_true')
+    summary_time_shortcuts.add_argument('--month', action='store_true')
+    summary_time_shortcuts.add_argument('--last-month', action='store_true')
+    summary_time_shortcuts.add_argument('--year', action='store_true')
+    summary_time_shortcuts.add_argument('--last-year', action='store_true')
     summary_parser.set_defaults(func=do_summary)
 
     records_parser = subparsers.add_parser('records')
     records_parser.add_argument(
-        '--begin',
-        default=DEFAULT_REPORT_START,
-        help='Timestamp for start of reporting period (inclusive)')
+        '--begin', help='Timestamp for start of reporting period (inclusive)')
     records_parser.add_argument(
-        '--end',
-        default=DEFAULT_REPORT_END,
-        help='Timestamp for end of reporting period (exclusive)')
+        '--end', help='Timestamp for end of reporting period (exclusive)')
+    records_time_shortcuts = records_parser.add_mutually_exclusive_group()
+    records_time_shortcuts.add_argument('--yesterday', action='store_true')
+    records_time_shortcuts.add_argument('--week', action='store_true')
+    records_time_shortcuts.add_argument('--last-week', action='store_true')
+    records_time_shortcuts.add_argument('--month', action='store_true')
+    records_time_shortcuts.add_argument('--last-month', action='store_true')
+    records_time_shortcuts.add_argument('--year', action='store_true')
+    records_time_shortcuts.add_argument('--last-year', action='store_true')
     records_parser.set_defaults(func=do_records)
 
     report_parser = subparsers.add_parser('report')
@@ -200,8 +210,13 @@ def do_stop(args):
 
 
 def do_summary(args):
-    begin = _parse_timestamp(args.begin)
-    end = _parse_timestamp(args.end)
+
+    if args.begin or args.end:
+        begin = _parse_timestamp(args.begin or DEFAULT_REPORT_START)
+        end = _parse_timestamp(args.end or DEFAULT_REPORT_END)
+    else:
+        begin, end = from_timerange(args)
+
     log.info('presenting summary from %s to %s', begin, end)
 
     service = TimerService()
@@ -215,8 +230,13 @@ def do_summary(args):
 
 
 def do_records(args):
-    begin = _parse_timestamp(args.begin)
-    end = _parse_timestamp(args.end)
+
+    if args.begin or args.end:
+        begin = _parse_timestamp(args.begin or DEFAULT_REPORT_START)
+        end = _parse_timestamp(args.end or DEFAULT_REPORT_END)
+    else:
+        begin, end = from_timerange(args)
+
     log.info('presenting records from %s to %s', begin, end)
 
     service = TimerService()
@@ -333,6 +353,52 @@ def _parse_timestamp(timestamp_in):
         raise ParseError("Unable to parse %s" % timestamp_in)
 
     return local_time(timestamp_out.replace(microsecond=0))
+
+
+def from_timerange(args):
+    """Return datetimes for timetranges specified in the arguments.
+
+    Allowed timeranges are:
+      * yesterday
+      * week
+      * last_week
+      * month
+      * last_month
+      * year
+      * last_year
+
+    :param args: parsed command line arguments.
+    :returns: A tuple of timezone aware datetime objects representing
+              the start (inclusive) and end (exclusive) for the given
+              timerange, or the start and end of the current day if not
+              specified.
+    """
+    now = datetime.now(tz_local())
+
+    if args.yesterday:
+        return start_of_day(now - timedelta(days=1)), start_of_day(now)
+
+    if args.week:
+        return start_of_week(now), start_of_week(now + timedelta(days=7))
+
+    if args.last_week:
+        return start_of_week(now - timedelta(days=7)), start_of_week(now)
+
+    if args.month:
+        return (start_of_month(now.replace(day=15)),
+                start_of_month(now.replace(day=15) + timedelta(days=30)))
+
+    if args.last_month:
+        return (start_of_month(now.replace(day=15) - timedelta(days=30)),
+                start_of_month(now.replace(day=15)))
+
+    if args.year:
+        return start_of_year(now), start_of_year(now + timedelta(days=365))
+
+    if args.last_year:
+        return start_of_year(now - timedelta(days=365)), start_of_year(now)
+
+    return start_of_day(now), start_of_day(now + timedelta(days=1))
 
 
 def do_export(args):

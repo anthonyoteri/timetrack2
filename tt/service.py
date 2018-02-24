@@ -90,6 +90,27 @@ class TimerService(object):
         if last is not None:
             tt.timer.update(last.id, stop=timestamp)
 
+    def update(self, id, task=None, start=None, stop=None):
+        """
+        Update an existing timer.
+
+        :param id: The ID of the existing timer.
+        :param task: The new task name.
+        :param start: The new start time.
+        :param stop: The new stop time or empty string to clear.
+        """
+        log.debug("Updating existing timer with id %s", id)
+        tt.timer.update(id=id, task=task, start=start, stop=stop)
+
+    def delete(self, id):
+        """
+        Delete a timer by ID.
+
+        :param id: The ID of the existing timer.
+        """
+        log.debug("Deleting existing timer with id %s", id)
+        tt.timer.remove(id=id)
+
     def summary(self, range_begin=None, range_end=None):
         """
         Report the task and total elapsed time for each task within

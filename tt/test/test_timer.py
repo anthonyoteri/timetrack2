@@ -154,6 +154,22 @@ def test_update_time_stop(session, task):
     assert timer.stop == now
 
 
+def test_update_time_stop_empty_string(session, task):
+
+    session.add(task)
+
+    now = datetime.now(timezone.utc)
+    one_hour_ago = now - timedelta(hours=1)
+    two_hours_ago = now - timedelta(hours=2)
+
+    session.add(Timer(task=task, start=two_hours_ago, stop=one_hour_ago))
+
+    update(1, stop='')
+
+    timer = session.query(Timer).get(1)
+    assert timer.stop is None
+
+
 @pytest.mark.parametrize(
     'offset',
     [

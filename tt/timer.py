@@ -65,7 +65,10 @@ def update(id, task=None, start=None, stop=None):
                 timer.start = start
 
             if stop is not None:
-                timer.stop = stop
+                if stop == '':
+                    timer.stop = None
+                else:
+                    timer.stop = stop
 
             _validate(timer)
 

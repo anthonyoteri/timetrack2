@@ -134,6 +134,44 @@ def test_stop(parse, options, mocker, timer_service):
         timestamp=timestamp.replace().replace().astimezone())
 
 
+def test_edit_delete_timer(timer_service):
+    tt.cli.main(['edit', '1', '--delete'])
+    timer_service.delete.assert_called_once_with(id=1)
+
+
+@mock.patch('dateparser.parse')
+def test_edit_start_time(parse, mocker, timer_service):
+    now = mocker.MagicMock(spec=datetime)
+    parse.return_value = now
+
+    tt.cli.main(['edit', '1', '--start', 'now'])
+    parse.assert_called_once_with('now', settings=tt.cli.DATEPARSER_SETTINGS)
+    timer_service.update.assert_called_once_with(
+        id=1, task=None, start=now.replace().replace().astimezone(), stop=None)
+
+
+@mock.patch('dateparser.parse')
+def test_edit_stop_time(parse, mocker, timer_service):
+    now = mocker.MagicMock(spec=datetime)
+    parse.return_value = now
+
+    tt.cli.main(['edit', '1', '--stop', 'now'])
+    parse.assert_called_once_with('now', settings=tt.cli.DATEPARSER_SETTINGS)
+    timer_service.update.assert_called_once_with(
+        id=1, task=None, start=None, stop=now.replace().replace().astimezone())
+
+
+def test_edit_task(timer_service):
+    tt.cli.main(['edit', '1', '--task', 'foobar'])
+    timer_service.update.assert_called_once_with(
+        id=1, task='foobar', start=None, stop=None)
+
+
+def test_edit_make_running(timer_service):
+    tt.cli.main(['edit', '1', '--make-running'])
+    timer_service.update.assert_called_once_with(id=1, stop='')
+
+
 @mock.patch('tt.cli.datetime', spec=datetime)
 @mock.patch('tt.cli.isinstance')
 def test_summary(mock_isinstance, mock_datetime, mocker, timer_service):

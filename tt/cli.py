@@ -80,6 +80,17 @@ def main(argv=None):
         'time', help='timestamp', default='now', nargs='?')
     stop_parser.set_defaults(func=do_stop)
 
+    edit_parser = subparsers.add_parser('edit')
+    edit_parser.add_argument('id', type=int, help='ID of the timer to edit')
+    edit_parser.add_argument(
+        '--delete', action='store_true', help='delete the timer')
+    edit_parser.add_argument('--task', help='Set task')
+    edit_parser.add_argument('--start-time', help='Set start time')
+    edit_parser.add_argument('--stop-time', help='Set stop time')
+    edit_parser.add_argument(
+        '--make-running', action='store_true', help='Mark timer as running')
+    edit_parser.set_defaults(func=do_edit)
+
     # Commands for working with reporting
 
     summary_parser = subparsers.add_parser('summary')
@@ -207,6 +218,27 @@ def do_stop(args):
     log.info('stopping current timer %s', time)
     service = TimerService()
     service.stop(timestamp=time)
+
+
+def do_edit(args):
+    log.info("edit timer %s", args.id)
+
+    service = TimerService()
+
+    if args.delete:
+        service.delete(id=args.id)
+
+    if args.start_time or args.stop_time or args.task:
+        start, stop = None, None
+        if args.start_time:
+            start = _parse_timestamp(args.start_time)
+        if args.stop_time:
+            stop = _parse_timestamp(args.stop_time)
+
+        service.update(id=args.id, task=args.task, start=start, stop=stop)
+
+    if args.make_running:
+        service.update(id=args.id, stop='')
 
 
 def do_summary(args):

@@ -1,7 +1,6 @@
 # Copyright (C) 2017, Anthony Oteri
 # All rights reserved.
 
-import argparse
 import calendar
 from datetime import datetime, timedelta
 import logging
@@ -12,7 +11,7 @@ import pytest
 
 import tt
 import tt.cli
-from tt.datetime import tz_local
+from tt.datetime import tz_local, start_of_day
 from tt.exc import ParseError
 
 
@@ -135,44 +134,41 @@ def test_stop(parse, options, mocker, timer_service):
         timestamp=timestamp.replace().replace().astimezone())
 
 
-@pytest.mark.parametrize(
-    'options', [['summary', '--begin', 'one week ago', '--end', 'now'], [
-        'summary', '--begin', 'one week ago'
-    ], ['summary', '--end', 'now'], ['summary']])
-@mock.patch('dateparser.parse')
-def test_summary(parse, options, mocker, timer_service):
+@mock.patch('tt.cli.datetime', spec=datetime)
+@mock.patch('tt.cli.isinstance')
+def test_summary(mock_isinstance, mock_datetime, mocker, timer_service):
     timer_service.summary.return_value = (['foo', timedelta(hours=1)],
                                           ['bar', timedelta(hours=2)])
 
-    begin = mocker.MagicMock(spec=datetime)
-    end = mocker.MagicMock(spec=datetime)
-    parse.side_effect = (begin, end)
+    t0 = start_of_day(datetime.now(tz_local()))
+    t1 = t0 + timedelta(days=1)
 
-    tt.cli.main(options)
+    mock_isinstance.return_value = False
+    mock_datetime.now.return_value = t0
 
-    calls = [tt.cli.DEFAULT_REPORT_START, tt.cli.DEFAULT_REPORT_END]
-    if len(options) == 5:
-        calls = [options[2], options[4]]
-    elif len(options) == 3:
-        if options[1] == '--begin':
-            calls[0] = options[2]
-        else:
-            calls[1] = options[2]
+    tt.cli.main(['summary'])
 
-    parse.assert_has_calls(
-        [mock.call(ts, settings=tt.cli.DATEPARSER_SETTINGS) for ts in calls])
-
-    timer_service.summary.assert_called_with(
-        range_begin=begin.replace().replace().astimezone(),
-        range_end=end.replace().replace().astimezone())
+    timer_service.summary.assert_called_once_with(range_begin=t0, range_end=t1)
 
 
-@pytest.mark.parametrize(
-    'options', [['records', '--begin', 'one week ago', '--end', 'now'], [
-        'records', '--begin', 'one week ago'
-    ], ['records', '--end', 'now'], ['records']])
-@mock.patch('dateparser.parse')
-def test_records(parse, options, mocker, timer_service):
+def test_summary_begin_end(mocker, timer_service):
+    timer_service.summary.return_value = (['foo', timedelta(hours=1)],
+                                          ['bar', timedelta(hours=2)])
+
+    t0 = datetime.now(tz_local()).replace(microsecond=0) - timedelta(hours=4)
+    t1 = t0 + timedelta(hours=3)
+
+    tt.cli.main(
+        ['summary', '--begin',
+         t0.isoformat(), '--end',
+         t1.isoformat()])
+
+    timer_service.summary.assert_called_once_with(range_begin=t0, range_end=t1)
+
+
+@mock.patch('tt.cli.datetime', spec=datetime)
+@mock.patch('tt.cli.isinstance')
+def test_records(mock_isinstance, mock_datetime, mocker, timer_service):
     timer_service.records.return_value = ([
         1, 'foo',
         mocker.MagicMock(spec=datetime),
@@ -185,27 +181,39 @@ def test_records(parse, options, mocker, timer_service):
         timedelta(hours=2)
     ])
 
-    begin = mocker.MagicMock(spec=datetime)
-    end = mocker.MagicMock(spec=datetime)
-    parse.side_effect = (begin, end)
+    t0 = start_of_day(datetime.now(tz_local()))
+    t1 = t0 + timedelta(days=1)
 
-    tt.cli.main(options)
+    mock_isinstance.return_value = False
+    mock_datetime.now.return_value = t0
 
-    calls = [tt.cli.DEFAULT_REPORT_START, tt.cli.DEFAULT_REPORT_END]
-    if len(options) == 5:
-        calls = [options[2], options[4]]
-    elif len(options) == 3:
-        if options[1] == '--begin':
-            calls[0] = options[2]
-        else:
-            calls[1] = options[2]
+    tt.cli.main(['records'])
 
-    parse.assert_has_calls(
-        [mock.call(ts, settings=tt.cli.DATEPARSER_SETTINGS) for ts in calls])
+    timer_service.records.assert_called_once_with(range_begin=t0, range_end=t1)
 
-    timer_service.records.assert_called_with(
-        range_begin=begin.replace().replace().astimezone(),
-        range_end=end.replace().replace().astimezone())
+
+def test_records_begin_end(mocker, timer_service):
+    timer_service.records.return_value = ([
+        1, 'foo',
+        mocker.MagicMock(spec=datetime),
+        mocker.MagicMock(spec=datetime),
+        timedelta(hours=1)
+    ], [
+        1, 'bar',
+        mocker.MagicMock(spec=datetime),
+        mocker.MagicMock(spec=datetime),
+        timedelta(hours=2)
+    ])
+
+    t0 = datetime.now(tz_local()).replace(microsecond=0) - timedelta(hours=4)
+    t1 = t0 + timedelta(hours=3)
+
+    tt.cli.main(
+        ['records', '--begin',
+         t0.isoformat(), '--end',
+         t1.isoformat()])
+
+    timer_service.records.assert_called_once_with(range_begin=t0, range_end=t1)
 
 
 def test_report(timer_service):
@@ -340,10 +348,15 @@ def test_from_timerange(mock_datetime, mocker):
     args.year = False
     args.last_year = False
 
-    assert tt.cli.from_timerange(args) == (
-        datetime(2018, 2, 23, 0, 0, tzinfo=tz_local()),
-        datetime(2018, 2, 24, 0, 0, tzinfo=tz_local())
-    )
+    assert tt.cli.from_timerange(args) == (datetime(
+        2018, 2, 23, 0, 0, tzinfo=tz_local()),
+                                           datetime(
+                                               2018,
+                                               2,
+                                               24,
+                                               0,
+                                               0,
+                                               tzinfo=tz_local()))
 
 
 @mock.patch('tt.cli.datetime')
@@ -361,10 +374,15 @@ def test_from_timerange_yesterday(mock_datetime, mocker):
     args.year = False
     args.last_year = False
 
-    assert tt.cli.from_timerange(args) == (
-        datetime(2018, 2, 22, 0, 0, tzinfo=tz_local()),
-        datetime(2018, 2, 23, 0, 0, tzinfo=tz_local())
-    )
+    assert tt.cli.from_timerange(args) == (datetime(
+        2018, 2, 22, 0, 0, tzinfo=tz_local()),
+                                           datetime(
+                                               2018,
+                                               2,
+                                               23,
+                                               0,
+                                               0,
+                                               tzinfo=tz_local()))
 
 
 @mock.patch('tt.cli.datetime')
@@ -382,10 +400,15 @@ def test_from_timerange_week(mock_datetime, mocker):
     args.year = False
     args.last_year = False
 
-    assert tt.cli.from_timerange(args) == (
-        datetime(2018, 2, 19, 0, 0, tzinfo=tz_local()),
-        datetime(2018, 2, 26, 0, 0, tzinfo=tz_local())
-    )
+    assert tt.cli.from_timerange(args) == (datetime(
+        2018, 2, 19, 0, 0, tzinfo=tz_local()),
+                                           datetime(
+                                               2018,
+                                               2,
+                                               26,
+                                               0,
+                                               0,
+                                               tzinfo=tz_local()))
 
 
 @mock.patch('tt.cli.datetime')
@@ -403,10 +426,15 @@ def test_from_timerange_last_week(mock_datetime, mocker):
     args.year = False
     args.last_year = False
 
-    assert tt.cli.from_timerange(args) == (
-        datetime(2018, 2, 12, 0, 0, tzinfo=tz_local()),
-        datetime(2018, 2, 19, 0, 0, tzinfo=tz_local())
-    )
+    assert tt.cli.from_timerange(args) == (datetime(
+        2018, 2, 12, 0, 0, tzinfo=tz_local()),
+                                           datetime(
+                                               2018,
+                                               2,
+                                               19,
+                                               0,
+                                               0,
+                                               tzinfo=tz_local()))
 
 
 @mock.patch('tt.cli.datetime')
@@ -424,10 +452,15 @@ def test_from_timerange_month(mock_datetime, mocker):
     args.year = False
     args.last_year = False
 
-    assert tt.cli.from_timerange(args) == (
-        datetime(2018, 2, 1, 0, 0, tzinfo=tz_local()),
-        datetime(2018, 3, 1, 0, 0, tzinfo=tz_local())
-    )
+    assert tt.cli.from_timerange(args) == (datetime(
+        2018, 2, 1, 0, 0, tzinfo=tz_local()),
+                                           datetime(
+                                               2018,
+                                               3,
+                                               1,
+                                               0,
+                                               0,
+                                               tzinfo=tz_local()))
 
 
 @mock.patch('tt.cli.datetime')
@@ -445,10 +478,15 @@ def test_from_timerange_last_month(mock_datetime, mocker):
     args.year = False
     args.last_year = False
 
-    assert tt.cli.from_timerange(args) == (
-        datetime(2018, 1, 1, 0, 0, tzinfo=tz_local()),
-        datetime(2018, 2, 1, 0, 0, tzinfo=tz_local())
-    )
+    assert tt.cli.from_timerange(args) == (datetime(
+        2018, 1, 1, 0, 0, tzinfo=tz_local()),
+                                           datetime(
+                                               2018,
+                                               2,
+                                               1,
+                                               0,
+                                               0,
+                                               tzinfo=tz_local()))
 
 
 @mock.patch('tt.cli.datetime')
@@ -466,10 +504,15 @@ def test_from_timerange_year(mock_datetime, mocker):
     args.year = True
     args.last_year = False
 
-    assert tt.cli.from_timerange(args) == (
-        datetime(2018, 1, 1, 0, 0, tzinfo=tz_local()),
-        datetime(2019, 1, 1, 0, 0, tzinfo=tz_local())
-    )
+    assert tt.cli.from_timerange(args) == (datetime(
+        2018, 1, 1, 0, 0, tzinfo=tz_local()),
+                                           datetime(
+                                               2019,
+                                               1,
+                                               1,
+                                               0,
+                                               0,
+                                               tzinfo=tz_local()))
 
 
 @mock.patch('tt.cli.datetime')
@@ -487,10 +530,15 @@ def test_from_timetrange_last_year(mock_datetime, mocker):
     args.year = False
     args.last_year = True
 
-    assert tt.cli.from_timerange(args) == (
-        datetime(2017, 1, 1, 0, 0, tzinfo=tz_local()),
-        datetime(2018, 1, 1, 0, 0, tzinfo=tz_local())
-    )
+    assert tt.cli.from_timerange(args) == (datetime(
+        2017, 1, 1, 0, 0, tzinfo=tz_local()),
+                                           datetime(
+                                               2018,
+                                               1,
+                                               1,
+                                               0,
+                                               0,
+                                               tzinfo=tz_local()))
 
 
 def test_init():

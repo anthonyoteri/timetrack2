@@ -84,13 +84,9 @@ def main(argv=None):
 
     summary_parser = subparsers.add_parser('summary')
     summary_parser.add_argument(
-        '--begin',
-        default=DEFAULT_REPORT_START,
-        help='Timestamp for start of reporting period (inclusive)')
+        '--begin', help='Timestamp for start of reporting period (inclusive)')
     summary_parser.add_argument(
-        '--end',
-        default=DEFAULT_REPORT_END,
-        help='Timestamp for end of reporting period (exclusive)')
+        '--end', help='Timestamp for end of reporting period (exclusive)')
     summary_time_shortcuts = summary_parser.add_mutually_exclusive_group()
     summary_time_shortcuts.add_argument('--yesterday', action='store_true')
     summary_time_shortcuts.add_argument('--week', action='store_true')
@@ -103,13 +99,17 @@ def main(argv=None):
 
     records_parser = subparsers.add_parser('records')
     records_parser.add_argument(
-        '--begin',
-        default=DEFAULT_REPORT_START,
-        help='Timestamp for start of reporting period (inclusive)')
+        '--begin', help='Timestamp for start of reporting period (inclusive)')
     records_parser.add_argument(
-        '--end',
-        default=DEFAULT_REPORT_END,
-        help='Timestamp for end of reporting period (exclusive)')
+        '--end', help='Timestamp for end of reporting period (exclusive)')
+    records_time_shortcuts = records_parser.add_mutually_exclusive_group()
+    records_time_shortcuts.add_argument('--yesterday', action='store_true')
+    records_time_shortcuts.add_argument('--week', action='store_true')
+    records_time_shortcuts.add_argument('--last-week', action='store_true')
+    records_time_shortcuts.add_argument('--month', action='store_true')
+    records_time_shortcuts.add_argument('--last-month', action='store_true')
+    records_time_shortcuts.add_argument('--year', action='store_true')
+    records_time_shortcuts.add_argument('--last-year', action='store_true')
     records_parser.set_defaults(func=do_records)
 
     report_parser = subparsers.add_parser('report')
@@ -210,8 +210,13 @@ def do_stop(args):
 
 
 def do_summary(args):
-    begin = _parse_timestamp(args.begin)
-    end = _parse_timestamp(args.end)
+
+    if args.begin or args.end:
+        begin = _parse_timestamp(args.begin or DEFAULT_REPORT_START)
+        end = _parse_timestamp(args.end or DEFAULT_REPORT_END)
+    else:
+        begin, end = from_timerange(args)
+
     log.info('presenting summary from %s to %s', begin, end)
 
     service = TimerService()
@@ -225,8 +230,13 @@ def do_summary(args):
 
 
 def do_records(args):
-    begin = _parse_timestamp(args.begin)
-    end = _parse_timestamp(args.end)
+
+    if args.begin or args.end:
+        begin = _parse_timestamp(args.begin or DEFAULT_REPORT_START)
+        end = _parse_timestamp(args.end or DEFAULT_REPORT_END)
+    else:
+        begin, end = from_timerange(args)
+
     log.info('presenting records from %s to %s', begin, end)
 
     service = TimerService()

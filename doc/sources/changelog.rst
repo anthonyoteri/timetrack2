@@ -1,18 +1,15 @@
 Product Changelog
 =================
 
-1.1 Roadmap
+Roadmap
+-------
+
+ * New: Additional shortcut parameters for summary and reporting views
+ * New: Support for editing timer records
+ * New: Support for deleting timer records
+
+1.0 Release
 -----------
-
- * [ ] Fix: Use in-memory database during development
- * [ ] New: Support for editing timer records
- * [ ] New: Integration with Homebrew for MacOS
- * [X] New: Additional shortcut parameters for summary and reporting views
- * [ ] New: Display feedback for commands which update the database
-
-
-1.0 Stable
-----------
 
 1.0.3
 ^^^^^

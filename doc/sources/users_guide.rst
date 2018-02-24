@@ -130,6 +130,59 @@ Stop takes only the optional `timestamp` field.
       describe in the `start` command.
 
 
+Editing a Timer
+^^^^^^^^^^^^^^^
+
+Before editing a timer, you will need to find the ID of the timer by
+using the `records` command.  See "Viewing Records" below for
+information on the usage of that command.
+
+Once you have the ID of an existing timer, you may edit the timer in the
+the following ways.
+
+  * Deleting the timer
+  * Updating the task associated with the timer
+  * Updating the start and stop times of a timer.
+  * Makeing a stopped timer active again.
+
+To edit a timer use the `edit` command::
+
+    $> tt edit <id> [options]
+
+Where `<id>` is the ID of the timer and `[options]` are one or more of
+the following.
+
+  * `--delete` -- Delete the timer
+  * `--start` -- Set a new start time
+  * `--stop` -- Set a new stop time
+  * `--task` -- Set a new task.
+  * `--make-active` -- Clear the stop time and make the timer the active timer.
+
+**Use care when editing a timer, many of the safe-guards in place under
+normal conditions, are left unchecked in `edit`.**  This is to allow
+the user full control over modifying records in the DB.  Some checks do
+still occur, such as verifying that the start time comes before the stop
+time, and both are in the past.
+
+To delete timer 249:::
+
+    $> tt edit 249 --delete
+
+To change the start and stop time of timer 53::
+
+    $> tt edit 53 --start 'an hour ago' --stop 'now'
+
+To make timer 199 the active timer::
+
+    $> tt edit 199 --make-active
+
+**WARNING: Do not change the times of a timer such that they overlap
+with another timer, or the time will be double-counted, as no checks
+currently are implemented to prevent this.**
+
+**WARNING: Do not make more than one timer active at a time.**
+
+
 Viewing Records
 ---------------
 

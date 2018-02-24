@@ -11,12 +11,16 @@ utility
 
 ## Roadmap
 
+> TBD
+
+## 1.0 Release
+
+### 1.0.4
+
 >   - New: Additional shortcut parameters for summary and reporting
 >     views
 >   - New: Support for editing timer records
 >   - New: Support for deleting timer records
-
-## 1.0 Release
 
 ### 1.0.3
 

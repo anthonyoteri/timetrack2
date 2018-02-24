@@ -7,7 +7,7 @@ Product Changelog
  * [ ] Fix: Use in-memory database during development
  * [ ] New: Support for editing timer records
  * [ ] New: Integration with Homebrew for MacOS
- * [ ] New: Additional shortcut parameters for summary and reporting views
+ * [X] New: Additional shortcut parameters for summary and reporting views
  * [ ] New: Display feedback for commands which update the database
 
 

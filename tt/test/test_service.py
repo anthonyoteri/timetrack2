@@ -148,6 +148,34 @@ def test_stop_without_active(update, active, mocker, timer_service):
     assert not update.called
 
 
+@mock.patch('tt.timer.update')
+def test_update_task(update, timer_service):
+    timer_service.update(id=1, task='foo')
+    update.assert_called_once_with(id=1, task='foo', start=None, stop=None)
+
+
+@mock.patch('tt.timer.update')
+def test_update_start(update, mocker, timer_service):
+    start = mocker.MagicMock(spec=datetime)
+
+    timer_service.update(id=1, start=start)
+    update.assert_called_once_with(id=1, task=None, start=start, stop=None)
+
+
+@mock.patch('tt.timer.update')
+def test_update_stop(update, mocker, timer_service):
+    stop = mocker.MagicMock(spec=datetime)
+
+    timer_service.update(id=1, stop=stop)
+    update.assert_called_once_with(id=1, task=None, start=None, stop=stop)
+
+
+@mock.patch('tt.timer.remove')
+def test_delete(remove, timer_service):
+    timer_service.delete(1234)
+    remove.assert_called_once_with(id=1234)
+
+
 @mock.patch('tt.timer.groups_by_timerange')
 def test_summary(groups_by_timerange, mocker, timer_service):
     expected = [('foo', timedelta(hours=1)), ('bar', timedelta(hours=2))]

@@ -40,7 +40,7 @@ def range_weeks(start, end):
     and end dates, representing the first Sunday of each week.
 
     :param start: The starting date, inclusive.
-    :param end: The ending date, inclusive.
+    :param end: The ending date, exclusive.
     :yields: One datetime.datetime object per week between start and end.
     """
     for ts in pandas.date_range(start, end, freq='W-MON'):
@@ -57,11 +57,7 @@ def week_boundaries(date):
               and end of the week containing the given date.
     """
     beginning = date - timedelta(days=date.weekday())
-    end = beginning + timedelta(days=6)
-
-    # Double-check that weeks are Monday - Sunday
-    assert beginning.weekday() == 0
-    assert end.weekday() == 6
+    end = beginning + timedelta(days=7)
 
     return beginning, end
 
@@ -75,6 +71,8 @@ def local_time(dt):
     :returns: A timezone-aware datetime.datetime object in the users local
               timezone.
     """
+    if dt is None:
+        return None
     return dt.replace(tzinfo=tz.tzutc()).astimezone(tz.tzlocal())
 
 
@@ -86,6 +84,8 @@ def utc_time(dt):
     :param dt: A datetime.datetime object.
     :returns: A timezone-aware datetime.datetime object in UTC.
     """
+    if dt is None:
+        return None
     return dt.replace(tzinfo=tz.tzlocal()).astimezone(tz.tzutc())
 
 

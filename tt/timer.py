@@ -1,13 +1,11 @@
 # Copyright (C) 2018, Anthony Oteri
 # All rights reserved.
 
-import collections
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 import logging
 
 from sqlalchemy.orm.exc import NoResultFound
 
-from tt.datetime import local_time
 from tt.exc import ValidationError
 from tt.orm import Task, Timer
 from tt.sql import transaction
@@ -120,81 +118,8 @@ def timers():
             yield timer
 
 
-def timers_by_timerange(start, end=datetime.now(timezone.utc)):
-    """
-    Generate a list of timers which fall between the given start and end
-    dates.
-
-    :param start: The datetime.datetime representing the start of the
-                  timerange (inclusive)
-    :param end:  The datetime.datetime representing the end of the
-                 timerange (exclusive)
-                 (Default value = datetime.now(timezone.utc)
-    :yields: A tuple of (id, task, start, stop, elapsed) for each timer
-             which falls within the given timerange.
-    """
+def slice(start, end):
     with transaction() as session:
-        for timer in session.query(Timer).filter(start < Timer.start,
-                                                 Timer.start <= end).all():
-            yield (timer.id, timer.task.name, timer.start, timer.stop,
-                   timer.elapsed)
-
-
-def groups_by_timerange(start, end=datetime.now(timezone.utc)):
-    """
-    Construct a summary for the timers within the given timerange.
-
-    :param start: The datetime.datetime representing the start of the
-                  timerange (inclusive)
-    :param end:  The datetime.datetime representing the end of the
-                 timerange (exclusive)
-                 (Default value = datetime.now(timezone.utc)
-    :yields: A tuple of (task, elapsed) for each task in the given
-             timerange.
-    """
-
-    with transaction() as session:
-
-        tasks = [
-            t[0]
-            for t in session.query(Timer.task_id).filter(
-                start < Timer.start, Timer.start <= end).distinct(
-                    Timer.task_id).order_by(Timer.task_id).all()
-        ]
-
-        for task_id in tasks:
-            timers = session.query(Timer).filter(
-                start < Timer.start, Timer.start <= end,
-                Timer.task_id == task_id).all()
-            task_name = timers[0].task.name
-            elapsed = timedelta(
-                seconds=sum(t.elapsed.total_seconds() for t in timers))
-            yield task_name, elapsed
-
-
-def aggregate_by_task_date(start, end):
-    """
-    Fetch data about tasks per day in a given timerange.
-
-    An example return object is as follows:
-
-    {"task1": {date(2018, 2, 1): timedelta()},
-     "task2": {date(2018, 2, 1): timedelta()}}
-
-    :param start: The datetime.datetime representing the start of the
-                  timerange. (inclusive)
-    :param end: The datetime.datetime representing the end of the timerange
-                (exclusive)
-
-    :returns: A nested dictionary of tasks containing the total elapsed time
-              spent per day.
-    """
-    data = collections.defaultdict(lambda: collections.defaultdict(timedelta))
-
-    with transaction() as session:
-        for timer in session.query(Timer).filter(start < Timer.start,
-                                                 Timer.start <= end).all():
-            data[timer.task.name][local_time(
-                timer.start).date()] += timer.elapsed
-
-    return data
+        for timer in session.query(Timer).filter(start <= Timer.start,
+                                                 Timer.start < end).all():
+            yield timer.to_dict()

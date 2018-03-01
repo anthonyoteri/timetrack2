@@ -1,7 +1,7 @@
 # Copyright (C) 2018, Anthony Oteri
 # All rights reserved.
 
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 import json
 
 import iso8601
@@ -21,16 +21,13 @@ def dump(service, out):
     :param service: The TimerService instance
     :param out: A file-like object where to dump the records.
     """
-    begin = datetime(1970, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
-    end = datetime.now(timezone.utc)
-
-    for _, task, start, _, elapsed in service.records(
-            range_begin=begin, range_end=end):
-        record = {
-            'task': task,
-            'start': start.isoformat(),
-            'elapsed': int(elapsed.total_seconds())
-        }
+    for _, timers in service.slice_grouped_by_date():
+        for timer in timers:
+            record = {
+                'task': timer['task'],
+                'start': timer['start'].isoformat(),
+                'elapsed': int(timer['elapsed'].total_seconds())
+            }
         json.dump(record, out)
         out.write('\n')
 

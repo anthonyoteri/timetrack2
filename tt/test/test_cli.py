@@ -11,23 +11,47 @@ import pytest
 
 import tt
 import tt.cli
+from tt.datatable import Datatable
 from tt.datetime import tz_local, start_of_day
 from tt.exc import ParseError
 
 
 @pytest.fixture
 def task_service(mocker):
+    service = mocker.MagicMock(spec=tt.cli.TaskService)
     init = mocker.patch('tt.cli.TaskService')
-    service = mocker.MagicMock()
     init.return_value = service
     return service
 
 
 @pytest.fixture
 def timer_service(mocker):
+    service = mocker.MagicMock(spec=tt.cli.TimerService)
     init = mocker.patch('tt.cli.TimerService')
-    service = mocker.MagicMock()
     init.return_value = service
+    return service
+
+
+@pytest.fixture
+def datatable():
+    table = Datatable(
+        table=[{
+            'foo': 1,
+            'bar': 2
+        }], labels=['foobar'], summaries=['bazboom'])
+    return table
+
+
+@pytest.fixture
+def reporting_service(mocker, datatable, timer_service):
+    service = mocker.MagicMock(spec=tt.cli.ReportingService)
+    init = mocker.patch('tt.cli.ReportingService')
+    init.return_value = service
+
+    service.timers_by_day.return_value = iter([datatable])
+    service.summary_by_task.return_value = datatable
+    service.summary_by_day_and_task.return_value = iter([datatable])
+
     return service
 
 
@@ -173,26 +197,18 @@ def test_edit_make_running(timer_service):
 
 
 @mock.patch('tt.cli.datetime', spec=datetime)
-@mock.patch('tt.cli.isinstance')
-def test_summary(mock_isinstance, mock_datetime, mocker, timer_service):
-    timer_service.summary.return_value = (['foo', timedelta(hours=1)],
-                                          ['bar', timedelta(hours=2)])
-
+def test_summary(mock_datetime, timer_service, reporting_service):
     t0 = start_of_day(datetime.now(tz_local()))
     t1 = t0 + timedelta(days=1)
 
-    mock_isinstance.return_value = False
     mock_datetime.now.return_value = t0
 
     tt.cli.main(['summary'])
 
-    timer_service.summary.assert_called_once_with(range_begin=t0, range_end=t1)
+    reporting_service.summary_by_task.assert_called_once_with(start=t0, end=t1)
 
 
-def test_summary_begin_end(mocker, timer_service):
-    timer_service.summary.return_value = (['foo', timedelta(hours=1)],
-                                          ['bar', timedelta(hours=2)])
-
+def test_summary_begin_end(timer_service, reporting_service):
     t0 = datetime.now(tz_local()).replace(microsecond=0) - timedelta(hours=4)
     t1 = t0 + timedelta(hours=3)
 
@@ -201,48 +217,21 @@ def test_summary_begin_end(mocker, timer_service):
          t0.isoformat(), '--end',
          t1.isoformat()])
 
-    timer_service.summary.assert_called_once_with(range_begin=t0, range_end=t1)
+    reporting_service.summary_by_task.assert_called_once_with(start=t0, end=t1)
 
 
 @mock.patch('tt.cli.datetime', spec=datetime)
-@mock.patch('tt.cli.isinstance')
-def test_records(mock_isinstance, mock_datetime, mocker, timer_service):
-    timer_service.records.return_value = ([
-        1, 'foo',
-        mocker.MagicMock(spec=datetime),
-        mocker.MagicMock(spec=datetime),
-        timedelta(hours=1)
-    ], [
-        1, 'bar',
-        mocker.MagicMock(spec=datetime),
-        mocker.MagicMock(spec=datetime),
-        timedelta(hours=2)
-    ])
-
+def test_records(mock_datetime, timer_service, reporting_service):
     t0 = start_of_day(datetime.now(tz_local()))
     t1 = t0 + timedelta(days=1)
 
-    mock_isinstance.return_value = False
     mock_datetime.now.return_value = t0
-
     tt.cli.main(['records'])
 
-    timer_service.records.assert_called_once_with(range_begin=t0, range_end=t1)
+    reporting_service.timers_by_day.assert_called_once_with(start=t0, end=t1)
 
 
-def test_records_begin_end(mocker, timer_service):
-    timer_service.records.return_value = ([
-        1, 'foo',
-        mocker.MagicMock(spec=datetime),
-        mocker.MagicMock(spec=datetime),
-        timedelta(hours=1)
-    ], [
-        1, 'bar',
-        mocker.MagicMock(spec=datetime),
-        mocker.MagicMock(spec=datetime),
-        timedelta(hours=2)
-    ])
-
+def test_records_begin_end(mocker, timer_service, reporting_service):
     t0 = datetime.now(tz_local()).replace(microsecond=0) - timedelta(hours=4)
     t1 = t0 + timedelta(hours=3)
 
@@ -251,29 +240,19 @@ def test_records_begin_end(mocker, timer_service):
          t0.isoformat(), '--end',
          t1.isoformat()])
 
-    timer_service.records.assert_called_once_with(range_begin=t0, range_end=t1)
+    reporting_service.timers_by_day.assert_called_once_with(start=t0, end=t1)
 
 
-def test_report(timer_service):
+def test_report(timer_service, reporting_service):
     options = ['report']
 
-    timer_service.report.return_value = [(['foo', 'bar', 'baz', 'bam'], [
-        ['1', '2', '3', '4'],
-        ['5', '6', '7', '8'],
-    ])]
-
     tt.cli.main(options)
-    assert timer_service.report.called
+    assert reporting_service.summary_by_day_and_task.called
 
 
 @pytest.mark.parametrize('month', range(1, 13))
-def test_report_with_month(month, timer_service):
+def test_report_with_month(month, timer_service, reporting_service):
     options = ['report', '--month', str(month)]
-
-    timer_service.report.return_value = [(['foo', 'bar', 'baz', 'bam'], [
-        ['1', '2', '3', '4'],
-        ['5', '6', '7', '8'],
-    ])]
 
     tt.cli.main(options)
 
@@ -283,37 +262,24 @@ def test_report_with_month(month, timer_service):
         today = today.replace(year=today.year - 1)
     last_day_of_month = calendar.monthrange(today.year, month)[1]
 
-    expected_begin = today.replace(day=1, month=month)
-    expected_end = today.replace(day=last_day_of_month, month=month)
+    start = today.replace(day=1, month=month)
+    end = today.replace(day=last_day_of_month, month=month)
 
-    timer_service.report.assert_called_with(
-        range_begin=expected_begin, range_end=expected_end)
+    reporting_service.summary_by_day_and_task.assert_called_once_with(
+        start=start, end=end)
 
 
 @mock.patch('tt.cli.datetime', autospec=datetime)
-@mock.patch('tt.cli.isinstance')
-def test_status(mock_isinstance, mock_datetime, mocker, timer_service):
+def test_status(mock_datetime, timer_service, reporting_service):
     options = ['status']
-    mock_isinstance.return_value = False
-    timer_service.report.return_value = [(['foo', 'bar', 'baz', 'bam'], [
-        ['1', '2', '3', '4'],
-        ['5', '6', '7', '8'],
-    ])]
-    timer_service.records.return_value = [[
-        1, 'foo',
-        mocker.MagicMock(spec=datetime),
-        mocker.MagicMock(spec=datetime),
-        timedelta(hours=1)
-    ]]
-
     mock_datetime.now.return_value = datetime(2018, 2, 19)
 
     tt.cli.main(options)
-    timer_service.report.assert_called_with(
-        range_begin=datetime(2018, 2, 19), range_end=datetime(2018, 2, 25))
 
-    timer_service.records.assert_called_with(
-        range_begin=datetime(2018, 2, 19), range_end=datetime(2018, 2, 20))
+    reporting_service.summary_by_day_and_task.assert_called_once_with(
+        start=datetime(2018, 2, 19), end=datetime(2018, 2, 26))
+    reporting_service.timers_by_day.assert_called_once_with(
+        start=datetime(2018, 2, 19), end=datetime(2018, 2, 20))
 
 
 @pytest.mark.parametrize('destination', ['-', '/tmp/foo'])

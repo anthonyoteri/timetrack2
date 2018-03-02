@@ -7,6 +7,7 @@ from sqlalchemy import Column, Integer, ForeignKey, String
 from sqlalchemy_utc import UtcDateTime
 from sqlalchemy.orm import relationship
 
+from tt.datetime import local_time
 from tt.sql import Base
 
 
@@ -42,3 +43,15 @@ class Timer(Base):
                 timezone.utc).replace(microsecond=0) - self.start
         else:
             return self.stop - self.start
+
+    def to_dict(self):
+        """
+        Return the object as a plain dictionary.
+        """
+        return {
+            'id': self.id,
+            'task': self.task.name,
+            'start': local_time(self.start),
+            'stop': local_time(self.stop),
+            'elapsed': self.elapsed,
+        }

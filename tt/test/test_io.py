@@ -24,19 +24,23 @@ def task_service(mocker):
 
 @mock.patch('json.dump')
 def test_dump(json_dump, timer_service, mocker):
-
     out = mocker.MagicMock(spec=io.TextIOWrapper)
     start = mocker.MagicMock(spec=datetime)
     start.isoformat.return_value = '2018-01-01T00:00:00Z'
-    stop = mocker.MagicMock(spec=datetime)
     elapsed = mocker.MagicMock(spec=timedelta)
     elapsed.total_seconds.return_value = 600.0
 
-    timer_service.records.return_value = [(1, 'foo', start, stop, elapsed)]
+    timer_service.slice_grouped_by_date.return_value = [(start, [{
+        'task':
+        'foo',
+        'start':
+        start,
+        'elapsed':
+        elapsed
+    }])]
 
     dump(timer_service, out)
 
-    assert timer_service.records.called
     json_dump.assert_called_with({
         'task': 'foo',
         'start': '2018-01-01T00:00:00Z',

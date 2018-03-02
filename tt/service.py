@@ -1,9 +1,11 @@
 # Copyright (C) 2018, Anthony Oteri
 # All rights reserved.
 
+import collections
 from datetime import datetime, timedelta, timezone
 import logging
 
+from tt.datatable import Datatable
 import tt.datetime
 import tt.task
 import tt.timer
@@ -111,101 +113,172 @@ class TimerService(object):
         log.debug("Deleting existing timer with id %s", id)
         tt.timer.remove(id=id)
 
-    def summary(self, range_begin=None, range_end=None):
-        """
-        Report the task and total elapsed time for each task within
-        the given timerange.
+    def slice_grouped_by_date(self, start=None, end=None, elapsed=False):
+        """Group a selection of records by date
 
-        :param range_begin: The timezone-aware start time (inclusive)
-        :param range_end:  The timezone-aware end time (exclusive)
-        :yields: A tuple of (task, elapsed) for each task.
+        :param start: The starting date (inclusive)
+        :param end: The ending date (exclusive)
+        :param elapsed: If True, return the total elapsed time per bucket.
+                        If False, return the list of matching timers per
+                        bucket.
+        :yields: A tuple of Date, and either a list of records or the total
+                 elapsed time.
         """
+
+        start = start or datetime(1970, 1, 1, tzinfo=timezone.utc)
+        end = end or datetime.now(tt.datetime.tz_local())
+
+        timers = tt.timer.slice(start=start, end=end)
+
+        results = collections.defaultdict(list)
+        for timer in timers:
+            key = timer['start'].date()
+            results[key].append(timer)
+
+        for k, v in results.items():
+            if elapsed:
+                yield k, timedelta(
+                    seconds=sum([t['elapsed'].total_seconds() for t in v]))
+            else:
+                yield k, v
+
+    def slice_grouped_by_task(self, start=None, end=None, elapsed=False):
+        """Group a selection of records by task
+
+        :param start: The starting date (inclusive)
+        :param end: The ending date (exclusive)
+        :param elapsed: If True, return the total elapsed time per bucket.
+                        If False, return the list of matching timers per
+                        bucket.
+        :yields: A tuple of task name, and either a list of records or the
+                 total elapsed time.
+        """
+        start = start or datetime(1970, 1, 1, tzinfo=timezone.utc)
+        end = end or datetime.now(tt.datetime.tz_local())
+
+        timers = tt.timer.slice(start=start, end=end)
+
+        results = collections.defaultdict(list)
+        for timer in timers:
+            key = timer['task']
+            results[key].append(timer)
+
+        for k, v in results.items():
+            if elapsed:
+                yield k, timedelta(
+                    seconds=sum([t['elapsed'].total_seconds() for t in v]))
+            else:
+                yield k, v
+
+    def slice_grouped_by_date_task(self, start=None, end=None, elapsed=False):
+        """Group a selection of records by date and task
+
+        :param start: The starting date (inclusive)
+        :param end: The ending date (exclusive)
+        :param elapsed: If True, return the total elapsed time per bucket.
+                        If False, return the list of matching timers per
+                        bucket.
+        :yields: A tuple of date, task name, and either a list of records or
+                 the total elapsed time.
+        """
+        start = start or datetime(1970, 1, 1, tzinfo=timezone.utc)
+        end = end or datetime.now(tt.datetime.tz_local())
+
+        timers = tt.timer.slice(start=start, end=end)
+
+        results = collections.defaultdict(
+            lambda: collections.defaultdict(list))
+        for timer in timers:
+            date_key = timer['start'].date()
+            task_key = timer['task']
+            results[date_key][task_key].append(timer)
+
+        for date_key, tasks in results.items():
+            for task_key, v in tasks.items():
+                if elapsed:
+                    yield date_key, task_key, timedelta(
+                        seconds=sum([t['elapsed'].total_seconds() for t in v]))
+                else:
+                    yield date_key, task_key, v
+
+
+class ReportingService(object):
+    def __init__(self, timer_service):
+        self.timer_service = timer_service
+        Datatable.table_fmt = "fancy_grid"
+        Datatable.value_fn = self._formatter
+
+    def timers_by_day(self, start, end):
+        for day, timers in self.timer_service.slice_grouped_by_date(
+                start=start, end=end):
+            columns = ['id', 'task', 'start', 'stop', 'elapsed']
+            table = Datatable(table=timers, headers=columns)
+            table.caption = day.strftime('%A %B %d, %Y')
+            yield table
+
+    def summary_by_task(self, start, end):
+        columns = ['elapsed']
+        table = Datatable(headers=columns)
+
         total = timedelta(0)
-        for task, elapsed in tt.timer.groups_by_timerange(
-                start=range_begin, end=range_end):
+        for task, elapsed in self.timer_service.slice_grouped_by_task(
+                start=start, end=end, elapsed=True):
+            table.append({'elapsed': elapsed}, label=task)
             total += elapsed
-            yield task, elapsed
-        yield "TOTAL", total
+        table.append({"elapsed": total}, label='TOTAL')
 
-    def records(self, range_begin=None, range_end=None):
-        """
-        Report each timer within the given timerange.
+        return table
 
-        :param range_begin:  The timezone-aware start time (inclusive)
-        :param range_end:  The timezone-aware end time (exclusive)
+    def summary_by_day_and_task(self, start, end):
+        extended_start, _ = tt.datetime.week_boundaries(start)
 
-        :yields A tuple of (id, task, start, stop, elapsed) for each timer.
-        """
-        for id, task, start, stop, elapsed in tt.timer.timers_by_timerange(
-                start=range_begin, end=range_end):
-            yield id, task, start, stop, elapsed
+        for week_start in tt.datetime.range_weeks(extended_start, end):
 
-    def report(self, range_begin=None, range_end=None, threshold=15 * 60):
-        """
-        Generate weekly tables for full weeks covering the given timerange.
+            if week_start == end:
+                break
 
-        If the given range_begin or range_end do not fall on week boundaries,
-        The reported tables will contain any days outside of the given range
-        to make completed weeks.  E.g. if the range_begin falls on a
-        Tuesday, the table will include the previous Monday, however no data
-        will be shown in days outside of the given range.
+            week_end = week_start + timedelta(days=7)
 
-        Each table will be yeilded as a list of lists, where the first column
-        in each row will contain the name of the task, and the last column will
-        represent the total time spent during that week on that task.  For
-        example:
+            slice_ = list(
+                self.timer_service.slice_grouped_by_date_task(
+                    start=week_start, end=week_end, elapsed=True))
 
-        [['task1', timedelta(...), None, None, None, None, timedelta(...)],
-         ['task2', None, timedelta(...), None, None, None, timedelta(...)]]
+            if not slice_:
+                continue
 
-        Additionally, the list of header columns will be yielded. E.g.
+            sheet = collections.defaultdict(dict)
+            task_totals = collections.defaultdict(timedelta)
+            day_totals = collections.defaultdict(timedelta)
 
-        ['Task', '02-01', '02-02', ..., 'Total']
+            for date_key, task_key, elapsed in slice_:
+                sheet[task_key][date_key] = elapsed
+                task_totals[task_key] += elapsed
+                day_totals[date_key] += elapsed
 
-        :param range_begin:  The start date for records (inclusive)
-        :param range_end:  The end date for records (exclusive)
-        :param threshold:  The minimum number of seconds, under wich values
-                           will not be reported.(Default value = 15 * 60)
+            table = Datatable(
+                header_fn=lambda x: x.strftime('%a %b %d'),
+                label_header=' ' * 16,
+                summary_header='Total')
+            for t in sheet:
+                row = {k: v for k, v in sheet[t].items()}
+                table.append(
+                    row,
+                    label=t,
+                    summary=tt.datetime.timedelta_to_string(task_totals[t]))
+            total_time = timedelta(
+                seconds=sum([t.total_seconds() for t in day_totals.values()]))
+            table.append(
+                day_totals,
+                label="TOTAL",
+                summary=tt.datetime.timedelta_to_string(total_time))
 
-        :yields Tuples of (headers, table_data) for each week.
-        """
-        period_start, _ = tt.datetime.week_boundaries(range_begin)
-        _, period_end = tt.datetime.week_boundaries(range_end)
+            table.caption = 'Week %s' % week_start.strftime('%W')
 
-        for week_start in tt.datetime.range_weeks(period_start, period_end):
-            _, week_end = tt.datetime.week_boundaries(week_start)
-            weekly_data = tt.timer.aggregate_by_task_date(
-                start=range_begin, end=range_end)
+            yield table
 
-            dates = [
-                d.date().strftime('%b %d')
-                for d in tt.datetime.range_weekdays(week_start, week_end)
-            ]
-            headers = [" " * 16] + dates + ['Total']
-            rows = []
-            for task in weekly_data:
-                log.debug('Columns for task %s %s', task,
-                          list(weekly_data[task].keys()))
-                cols = [
-                    weekly_data[task].get(d.date())
-                    for d in tt.datetime.range_weekdays(week_start, week_end)
-                ]
-                total = timedelta(
-                    seconds=sum(c.total_seconds() for c in cols
-                                if c is not None) or 0)
-                if total >= timedelta(seconds=threshold):
-                    rows.append([task] + cols + [total])
-
-            totals = [
-                timedelta(
-                    seconds=sum([
-                        c.total_seconds() for c in r
-                        if isinstance(c, timedelta)
-                    ]) or 0) or None for r in zip(*rows)
-            ][1:]
-            totals = totals or [None] * 6
-
-            log.debug("len totals %d, totals %s", len(totals), totals)
-
-            rows.append(['TOTAL'] + totals)
-            yield headers, rows
+    def _formatter(self, value):
+        if isinstance(value, datetime):
+            return tt.datetime.local_time(value).replace(tzinfo=None)
+        if isinstance(value, timedelta):
+            return tt.datetime.timedelta_to_string(value)
+        return value

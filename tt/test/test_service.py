@@ -1,15 +1,15 @@
 # Copyright (C) 2018, Anthony Oteri
 # All rights reserved.
 
-import collections
 from datetime import date, datetime, timedelta
 from unittest import mock
 
 import pytest
 
+from tt.datetime import tz_local
 from tt.exc import ValidationError
 from tt.orm import Task, Timer
-from tt.service import TaskService, TimerService
+from tt.service import TaskService, TimerService, ReportingService
 
 
 @pytest.fixture
@@ -20,6 +20,11 @@ def task_service():
 @pytest.fixture
 def timer_service():
     return TimerService()
+
+
+@pytest.fixture
+def reporting_service(mocker):
+    return ReportingService(mocker.MagicMock(spec=TimerService))
 
 
 @mock.patch('tt.task.create')
@@ -176,92 +181,220 @@ def test_delete(remove, timer_service):
     remove.assert_called_once_with(id=1234)
 
 
-@mock.patch('tt.timer.groups_by_timerange')
-def test_summary(groups_by_timerange, mocker, timer_service):
-    expected = [('foo', timedelta(hours=1)), ('bar', timedelta(hours=2))]
-    groups_by_timerange.return_value = iter(expected)
-
-    begin = mocker.MagicMock(spec=datetime)
-    end = mocker.MagicMock(spec=datetime)
-
-    actual = list(timer_service.summary(range_begin=begin, range_end=end))
-
-    groups_by_timerange.assert_called_with(start=begin, end=end)
-    assert actual == expected + [('TOTAL', timedelta(hours=3))]
-
-
-@mock.patch('tt.timer.timers_by_timerange')
-def test_records(timers_by_timerange, mocker, timer_service):
-    TimerRecord = collections.namedtuple(
-        'TimerRecord', ['id', 'task', 'start_time', 'stop_time', 'elapsed'])
-
-    expected = [
-        TimerRecord(1, 'foo', '1000', '1001', timedelta(hours=1)),
-        TimerRecord(2, 'bar', '1000', '1002', timedelta(hours=2))
+@pytest.fixture
+def slices():
+    return [
+        {
+            'start': datetime(2018, 2, 28, 9, 0, tzinfo=tz_local()),
+            'elapsed': timedelta(hours=1),
+            'task': 'one',
+        },
+        {
+            'start': datetime(2018, 2, 28, 10, 0, tzinfo=tz_local()),
+            'elapsed': timedelta(hours=2),
+            'task': 'two',
+        },
+        {
+            'start': datetime(2018, 2, 28, 11, 0, tzinfo=tz_local()),
+            'elapsed': timedelta(hours=4),
+            'task': 'one',
+        },
+        {
+            'start': datetime(2018, 3, 1, 9, 0, tzinfo=tz_local()),
+            'elapsed': timedelta(hours=8),
+            'task': 'two',
+        },
+        {
+            'start': datetime(2018, 3, 1, 10, 0, tzinfo=tz_local()),
+            'elapsed': timedelta(hours=16),
+            'task': 'one',
+        },
+        {
+            'start': datetime(2018, 3, 1, 11, 0, tzinfo=tz_local()),
+            'elapsed': timedelta(hours=32),
+            'task': 'two',
+        },
     ]
 
-    timers_by_timerange.return_value = iter(expected)
 
-    begin = mocker.MagicMock(spec=datetime)
-    end = mocker.MagicMock(spec=datetime)
+@mock.patch('tt.timer.slice')
+def test_slice_grouped_by_date(mocked_slice, slices, timer_service):
 
-    actual = list(timer_service.records(range_begin=begin, range_end=end))
+    mocked_slice.return_value = slices
 
-    timers_by_timerange.assert_called_with(start=begin, end=end)
-    assert actual == expected
+    results = list(timer_service.slice_grouped_by_date())
 
-
-@mock.patch('tt.timer.aggregate_by_task_date')
-def test_report(agg, mocker, timer_service):
-
-    weekly_data = {
-        'foo': {
-            date(2018, 2, 6): timedelta(hours=1),
-            date(2018, 2, 7): timedelta(hours=2),
-        },
-        'bar': {
-            date(2018, 2, 6): timedelta(hours=7),
-            date(2018, 2, 7): timedelta(hours=6),
-        },
-    }
-
-    agg.return_value = weekly_data
-
-    range_begin = datetime(2018, 2, 5)
-    range_end = datetime(2018, 2, 8)
-
-    header, table = list(
-        timer_service.report(range_begin=range_begin, range_end=range_end))[0]
-
-    agg.assert_called_once_with(start=range_begin, end=range_end)
-
-    expected_header = [
-        ' ' * 16,
-        'Feb 05',
-        'Feb 06',
-        'Feb 07',
-        'Feb 08',
-        'Feb 09',
-        'Total',
+    assert results == [
+        (date(2018, 2, 28), slices[:3]),
+        (date(2018, 3, 1), slices[3:]),
     ]
 
-    assert expected_header == header
 
-    expected_table = [[
-        'foo', None,
-        timedelta(hours=1),
-        timedelta(hours=2), None, None,
-        timedelta(hours=3)
-    ], [
-        'bar', None,
-        timedelta(hours=7),
-        timedelta(hours=6), None, None,
-        timedelta(hours=13)
-    ], [
-        'TOTAL', None,
-        timedelta(hours=8),
-        timedelta(hours=8), None, None,
-        timedelta(hours=16)
-    ]]
+@mock.patch('tt.timer.slice')
+def test_slice_grouped_by_date_elapsed(mocked_slice, slices, timer_service):
 
-    assert expected_table == table
+    mocked_slice.return_value = slices
+
+    results = list(timer_service.slice_grouped_by_date(elapsed=True))
+    assert results == [
+        (date(2018, 2, 28), timedelta(hours=7)),
+        (date(2018, 3, 1), timedelta(hours=56)),
+    ]
+
+
+@mock.patch('tt.timer.slice')
+def test_slice_grouped_by_task(mocked_slice, slices, timer_service):
+
+    mocked_slice.return_value = slices
+
+    results = list(timer_service.slice_grouped_by_task())
+    assert results == [
+        ('one', [slices[0], slices[2], slices[4]]),
+        ('two', [slices[1], slices[3], slices[5]]),
+    ]
+
+
+@mock.patch('tt.timer.slice')
+def test_slice_grouped_by_task_elapsed(mocked_slice, slices, timer_service):
+
+    mocked_slice.return_value = slices
+
+    results = list(timer_service.slice_grouped_by_task(elapsed=True))
+
+    assert results == [
+        ('one', timedelta(hours=21)),
+        ('two', timedelta(hours=42)),
+    ]
+
+
+@mock.patch('tt.timer.slice')
+def test_slice_grouped_by_date_task(mocked_slice, slices, timer_service):
+
+    mocked_slice.return_value = slices
+
+    results = list(timer_service.slice_grouped_by_date_task())
+
+    assert results == [
+        (date(2018, 2, 28), 'one', [slices[0], slices[2]]),
+        (date(2018, 2, 28), 'two', [slices[1]]),
+        (date(2018, 3, 1), 'two', [slices[3], slices[5]]),
+        (date(2018, 3, 1), 'one', [slices[4]]),
+    ]
+
+
+@mock.patch('tt.timer.slice')
+def test_slice_grouped_by_date_task_elapsed(mocked_slice, slices,
+                                            timer_service):
+
+    mocked_slice.return_value = slices
+
+    results = list(timer_service.slice_grouped_by_date_task(elapsed=True))
+
+    assert results == [
+        (date(2018, 2, 28), 'one', timedelta(hours=5)),
+        (date(2018, 2, 28), 'two', timedelta(hours=2)),
+        (date(2018, 3, 1), 'two', timedelta(hours=40)),
+        (date(2018, 3, 1), 'one', timedelta(hours=16)),
+    ]
+
+
+def test_timers_by_day(mocker, reporting_service):
+    slice_ = [(mocker.MagicMock(spec=date), [mocker.MagicMock(spec=dict)])]
+    reporting_service.timer_service.slice_grouped_by_date.return_value = slice_
+
+    start = mocker.MagicMock(spec=datetime)
+    end = mocker.MagicMock(spec=datetime)
+
+    tables = list(reporting_service.timers_by_day(start, end))
+
+    assert tables
+
+    reporting_service.timer_service.slice_grouped_by_date\
+        .assert_called_once_with(start=start, end=end)
+
+
+def test_summary_by_task(mocker, reporting_service):
+    slice_ = [(mocker.MagicMock(spec=str), mocker.MagicMock(spec=timedelta))]
+    reporting_service.timer_service.slice_grouped_by_task.return_value = slice_
+
+    start = mocker.MagicMock(spec=datetime)
+    end = mocker.MagicMock(spec=datetime)
+
+    table = reporting_service.summary_by_task(start, end)
+
+    assert table
+
+    reporting_service.timer_service.slice_grouped_by_task\
+        .assert_called_once_with(start=start, end=end, elapsed=True)
+
+
+@mock.patch('tt.datetime.range_weeks')
+@mock.patch('tt.datetime.week_boundaries')
+def test_summary_by_day_and_task(mock_week_boundaries, mock_range_weeks,
+                                 mocker, reporting_service):
+    slice_ = [(mocker.MagicMock(spec=datetime), mocker.MagicMock(spec=str),
+               timedelta(seconds=600))]
+    reporting_service.timer_service.slice_grouped_by_date_task\
+        .return_value = slice_
+
+    start = mocker.MagicMock(spec=datetime)
+    end = mocker.MagicMock(spec=datetime)
+
+    week_start = mocker.MagicMock(spec=datetime)
+    mock_week_boundaries.return_value = (week_start, None)
+
+    mock_range_weeks.return_value = [week_start]
+
+    table = list(reporting_service.summary_by_day_and_task(start, end))
+    assert table
+
+    mock_week_boundaries.assert_called_once_with(start)
+    mock_range_weeks.assert_called_once_with(week_start, end)
+    reporting_service.timer_service.slice_grouped_by_date_task\
+        .assert_called_once_with(start=week_start, end=mock.ANY, elapsed=True)
+
+
+@mock.patch('tt.datetime.range_weeks')
+@mock.patch('tt.datetime.week_boundaries')
+def test_summary_by_day_and_task_week_start_is_end(
+        mock_week_boundaries, mock_range_weeks, mocker, reporting_service):
+    slice_ = [(mocker.MagicMock(spec=datetime), mocker.MagicMock(spec=str),
+               timedelta(seconds=600))]
+    reporting_service.timer_service.slice_grouped_by_date_task\
+        .return_value = slice_
+
+    start = mocker.MagicMock(spec=datetime)
+    end = mocker.MagicMock(spec=datetime)
+
+    mock_week_boundaries.return_value = (end, None)
+    mock_range_weeks.return_value = [end]
+
+    table = list(reporting_service.summary_by_day_and_task(start, end))
+    assert not table
+
+
+@mock.patch('tt.datetime.range_weeks')
+@mock.patch('tt.datetime.week_boundaries')
+def test_summary_by_day_and_task_no_data(
+        mock_week_boundaries, mock_range_weeks, mocker, reporting_service):
+    slice_ = []
+    reporting_service.timer_service.slice_grouped_by_date_task\
+        .return_value = slice_
+
+    start = mocker.MagicMock(spec=datetime)
+    end = mocker.MagicMock(spec=datetime)
+
+    week_start = mocker.MagicMock(spec=datetime)
+    mock_week_boundaries.return_value = (week_start, None)
+
+    mock_range_weeks.return_value = [week_start]
+
+    table = list(reporting_service.summary_by_day_and_task(start, end))
+    assert not table
+
+
+@pytest.mark.parametrize(
+    'value',
+    [datetime(1970, 1, 1), timedelta(hours=1), "foo"])
+def test_formatter(value, reporting_service):
+    assert reporting_service._formatter(value) is not None

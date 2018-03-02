@@ -44,15 +44,15 @@ def test_range_weeks():
 
 
 @pytest.mark.parametrize('samples', [
-    (datetime(2018, 2, 11), datetime(2018, 2, 5), datetime(2018, 2, 11)),
-    (datetime(2018, 2, 12), datetime(2018, 2, 12), datetime(2018, 2, 18)),
-    (datetime(2018, 2, 13), datetime(2018, 2, 12), datetime(2018, 2, 18)),
-    (datetime(2018, 2, 14), datetime(2018, 2, 12), datetime(2018, 2, 18)),
-    (datetime(2018, 2, 15), datetime(2018, 2, 12), datetime(2018, 2, 18)),
-    (datetime(2018, 2, 16), datetime(2018, 2, 12), datetime(2018, 2, 18)),
-    (datetime(2018, 2, 17), datetime(2018, 2, 12), datetime(2018, 2, 18)),
-    (datetime(2018, 2, 18), datetime(2018, 2, 12), datetime(2018, 2, 18)),
-    (datetime(2018, 2, 19), datetime(2018, 2, 19), datetime(2018, 2, 25)),
+    (datetime(2018, 2, 11), datetime(2018, 2, 5), datetime(2018, 2, 12)),
+    (datetime(2018, 2, 12), datetime(2018, 2, 12), datetime(2018, 2, 19)),
+    (datetime(2018, 2, 13), datetime(2018, 2, 12), datetime(2018, 2, 19)),
+    (datetime(2018, 2, 14), datetime(2018, 2, 12), datetime(2018, 2, 19)),
+    (datetime(2018, 2, 15), datetime(2018, 2, 12), datetime(2018, 2, 19)),
+    (datetime(2018, 2, 16), datetime(2018, 2, 12), datetime(2018, 2, 19)),
+    (datetime(2018, 2, 17), datetime(2018, 2, 12), datetime(2018, 2, 19)),
+    (datetime(2018, 2, 18), datetime(2018, 2, 12), datetime(2018, 2, 19)),
+    (datetime(2018, 2, 19), datetime(2018, 2, 19), datetime(2018, 2, 26)),
 ])
 def test_week_boundaries(samples):
     date, expected_begin, expected_end = samples
@@ -76,6 +76,10 @@ def test_local_time():
     assert t1 - epoch == t0.replace(tzinfo=tz.tzutc()) - epoch
 
 
+def test_local_time_is_none():
+    assert tt.datetime.local_time(None) is None
+
+
 def test_utc_time():
 
     # Validate conversion of naive datetime to aware datetime
@@ -91,6 +95,10 @@ def test_utc_time():
     epoch = datetime(1970, 1, 1, tzinfo=tz.tzutc())
     assert t2 - epoch == t1 - epoch
     assert t1 - epoch == t0.replace(tzinfo=tz.tzlocal()) - epoch
+
+
+def test_utc_time_is_none():
+    assert tt.datetime.utc_time(None) is None
 
 
 def test_timedelta_to_string():

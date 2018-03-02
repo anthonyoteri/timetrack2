@@ -13,13 +13,13 @@ import dateparser
 import tabulate
 
 import tt
+from tt.datatable import Datatable
 from tt.datetime import (local_time, start_of_day, start_of_week,
-                         start_of_month, start_of_year, timedelta_to_string,
-                         tz_local)
+                         start_of_month, start_of_year, tz_local)
 from tt.exc import ParseError
 import tt.io
 from tt.sql import connect
-from tt.service import TaskService, TimerService
+from tt.service import TaskService, TimerService, ReportingService
 
 log = logging.getLogger('tt.cli')
 
@@ -196,8 +196,10 @@ def do_tasks(args):
     log.info('list tasks')
     service = TaskService()
 
-    headers = ['task', 'description']
-    print(_make_table(service.list(), headers=headers))
+    table = Datatable(label_header='Task', table_fmt='fancy_grid')
+    for task, description in service.list():
+        table.append({'description': description}, label=task)
+    print(table)
 
 
 def do_remove(args):
@@ -249,16 +251,10 @@ def do_summary(args):
     else:
         begin, end = from_timerange(args)
 
-    log.info('presenting summary from %s to %s', begin, end)
+    timer_service = TimerService()
+    reporting_service = ReportingService(timer_service)
 
-    service = TimerService()
-
-    print("Summary from %s to %s" % (begin.replace(tzinfo=None),
-                                     end.replace(tzinfo=None)))
-
-    headers = ['task', 'elapsed']
-    table = service.summary(range_begin=begin, range_end=end)
-    print(_make_table(table, headers=headers))
+    print(reporting_service.summary_by_task(start=begin, end=end))
 
 
 def do_records(args):
@@ -269,20 +265,16 @@ def do_records(args):
     else:
         begin, end = from_timerange(args)
 
-    log.info('presenting records from %s to %s', begin, end)
+    timer_service = TimerService()
+    reporting_service = ReportingService(timer_service)
 
-    service = TimerService()
-
-    print("Records from %s to %s" % (begin.replace(tzinfo=None),
-                                     end.replace(tzinfo=None)))
-
-    headers = ['id', 'task', 'start', 'stop', 'elapsed']
-    table = service.records(range_begin=begin, range_end=end)
-    print(_make_table(table, headers=headers))
+    for daily_table in reporting_service.timers_by_day(start=begin, end=end):
+        print("%s\n" % daily_table)
 
 
 def do_report(args):
-    service = TimerService()
+    timer_service = TimerService()
+    reporting_service = ReportingService(timer_service)
 
     target_date = datetime.now(tz_local()).replace(
         hour=0, minute=0, second=0, microsecond=0)
@@ -295,15 +287,16 @@ def do_report(args):
     last_day_of_month = calendar.monthrange(target_date.year,
                                             target_date.month)[1]
 
-    for headers, table in service.report(
-            range_begin=target_date.replace(day=1),
-            range_end=target_date.replace(day=last_day_of_month)):
-
-        print(_make_table(table, headers=headers) + '\n')
+    start = target_date.replace(day=1)
+    end = target_date.replace(day=last_day_of_month)
+    for weekly_report in reporting_service.summary_by_day_and_task(
+            start=start, end=end):
+        print("%s\n" % weekly_report)
 
 
 def do_status(args):
-    service = TimerService()
+    timer_service = TimerService()
+    reporting_service = ReportingService(timer_service)
 
     now = datetime.now(tz_local()).replace(
         hour=0, minute=0, second=0, microsecond=0)
@@ -312,60 +305,11 @@ def do_status(args):
 
     day_begin = now
     day_end = now + timedelta(days=1)
-
-    for headers, table in service.report(
-            range_begin=week_begin, range_end=week_end):
-        print(_make_table(table, headers=headers))
-
-    headers = ['id', 'task', 'start', 'stop', 'elapsed']
-    table = service.records(range_begin=day_begin, range_end=day_end)
-    print(_make_table(table, headers=headers))
-
-
-def _make_table(rows, headers):
-    """
-    Generate a printable table containing.
-
-    :param rows: A list of lists or iterable of iterables containing
-                 the data to be displayed.
-    :param headers: A list or iterable of headers for each row.  If
-                    there are fewer headers than there are columns,
-                    they will align to the rightmost columns.
-    :returns: A printable table.
-    """
-
-    def convert(raw):
-        """
-        Apply any string manipulation to make the raw value suitable for
-        display.
-
-        Python datetimes should be converted to the user's local time.
-
-        :param raw: The raw object value.
-        :returns: A string suitable for formatting.
-        """
-        if isinstance(raw, datetime):
-            return local_time(raw).replace(tzinfo=None)
-        if isinstance(raw, timedelta):
-            return timedelta_to_string(raw)
-        return raw
-
-    def format_headers(headers, formatter=DEFAULT_TABLE_HEADER_FORMATTER):
-        """
-        Apply consistent formatting to each of the header strings.
-
-        :param headers:  A list or iterable of the header columns.
-        :param formatter:  A function to apply to each header string.
-                           (Default value = DEFAULT_TABLE_HEADER_FORMATTER)
-        :yields: A string for each column header.
-        """
-        for h in headers:
-            yield formatter(h)
-
-    table = [[convert(c) for c in r] for r in rows]
-
-    return tabulate.tabulate(
-        table, headers=format_headers(headers), tablefmt=DEFAULT_TABLE_FORMAT)
+    print(next(
+        reporting_service.summary_by_day_and_task(
+            start=week_begin, end=week_end)))
+    print('\n')
+    print(next(reporting_service.timers_by_day(start=day_begin, end=day_end)))
 
 
 def _parse_timestamp(timestamp_in):

@@ -16,7 +16,7 @@ import tt
 from tt.datatable import Datatable
 from tt.datetime import (local_time, start_of_day, start_of_week,
                          start_of_month, start_of_year, tz_local)
-from tt.exc import ParseError
+from tt.exc import BadRequest, ParseError
 import tt.io
 from tt.sql import connect
 from tt.service import TaskService, TimerService, ReportingService
@@ -157,7 +157,11 @@ def main(argv=None):
         os.makedirs(os.path.dirname(db_file))
 
     connect(db_url="sqlite:///%s" % db_file, echo=args.verbose)
-    args.func(args)
+    try:
+        args.func(args)
+    except BadRequest as err:
+        print("Error: %s" % err)
+        return 1
 
 
 def configure_logging(verbose=False):

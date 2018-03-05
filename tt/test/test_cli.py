@@ -13,7 +13,7 @@ import tt
 import tt.cli
 from tt.datatable import Datatable
 from tt.datetime import tz_local, start_of_day
-from tt.exc import ParseError
+from tt.exc import BadRequest, ParseError
 
 
 @pytest.fixture
@@ -316,6 +316,22 @@ def test_import(load, mock_open, source):
         mock_open.assert_called_once_with(source, 'r')
 
     assert load.called
+
+
+@mock.patch('argparse.ArgumentParser')
+def test_bad_request(mock_argparse, mocker):
+    parser = mocker.MagicMock()
+    mock_argparse.return_value = parser
+
+    args = mocker.MagicMock()
+    args.version = False
+    args.verbose = False
+    parser.parse_args.return_value = args
+    args.func.side_effect = BadRequest
+
+    r_value = tt.cli.main([])
+
+    assert r_value == 1
 
 
 @mock.patch('dateparser.parse')

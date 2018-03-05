@@ -225,9 +225,9 @@ def test_last(session, task):
     session.add(task)
     timers = [
         Timer(
-            task=task,
-            start=datetime.now(timezone.utc) + timedelta(hours=i))
-        for i in range(-5, 0)]
+            task=task, start=datetime.now(timezone.utc) + timedelta(hours=i))
+        for i in range(-5, 0)
+    ]
     session.add_all(timers)
 
     last = tt.timer.last()

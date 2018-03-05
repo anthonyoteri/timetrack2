@@ -111,6 +111,17 @@ def active():
         return session.query(Timer).filter(Timer.stop.is_(None)).one_or_none()
 
 
+def last():
+    """Fetch the last timer, active or not.
+
+    :return dict: The dictionary represenation of the timer or None
+    """
+    with transaction() as session:
+        result = session.query(Timer).order_by(Timer.start.desc()).first()
+
+        return result.as_dict() if result else None
+
+
 def timers():
     """Generator for iterating over all timers."""
     with transaction() as session:
@@ -122,4 +133,4 @@ def slice(start, end):
     with transaction() as session:
         for timer in session.query(Timer).filter(start <= Timer.start,
                                                  Timer.start < end).all():
-            yield timer.to_dict()
+            yield timer.as_dict()

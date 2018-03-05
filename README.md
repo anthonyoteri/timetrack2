@@ -127,12 +127,15 @@ When you wish to start a timer for a task, use the start command:
 
     $> tt start my_task
 
-The start command takes one required parameter task and one optional
-parameter timestamp.
+The start command takes two optional parameters task and timestamp.
 
 >   - task -- The name of an existing task.
 >   - timestamp -- Optional time when the task was started. This value
 >     must be in the past, and uses a flexible format described below.
+
+If the task parameter is missing, it will use the same task as the last
+started task, effectively resuming the previous task. If there are no
+existing tasks, this parameter is required.
 
 The timestamp parameter is fairly flexible in it's notation. Below are
 some examples which could be used. Keep in mind, that the start command

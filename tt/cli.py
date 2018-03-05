@@ -70,7 +70,7 @@ def main(argv=None):
     # Commands for working with timers
 
     start_parser = subparsers.add_parser('start')
-    start_parser.add_argument('task', help='Task name')
+    start_parser.add_argument('task', help='Task name', nargs='?')
     start_parser.add_argument(
         'time', help='timestamp', default='now', nargs='?')
     start_parser.set_defaults(func=do_start)

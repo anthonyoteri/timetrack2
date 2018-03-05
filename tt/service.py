@@ -5,6 +5,7 @@ import collections
 from datetime import datetime, timedelta, timezone
 import logging
 
+from tt.exc import BadRequest
 from tt.datatable import Datatable
 import tt.datetime
 import tt.task
@@ -77,6 +78,14 @@ class TimerService(object):
         :param timestamp:  The timezone-aware start time.
                            (Default value = datetime.now(timezone.utc)
         """
+        if task is None:
+            last = tt.timer.last()
+            if last is not None:
+                log.debug("Resuming last task")
+                task = last['task']
+            else:
+                raise BadRequest("No task to resume")
+
         log.debug("Starting new timer for %s at %s", task, timestamp)
         tt.timer.create(task=task, start=timestamp)
 

@@ -221,6 +221,27 @@ def test_active_stopped(session, task):
     assert tt.timer.active() is None
 
 
+def test_last(session, task):
+    session.add(task)
+    timers = [
+        Timer(
+            task=task,
+            start=datetime.now(timezone.utc) + timedelta(hours=i))
+        for i in range(-5, 0)]
+    session.add_all(timers)
+
+    last = tt.timer.last()
+    assert last is not None
+    assert last['id'] == 5
+    assert last['task'] == task.name
+
+
+def test_last_empty_db(session, task):
+    session.add(task)
+    last = tt.timer.last()
+    assert last is None
+
+
 def test_timers(session, task):
     session.add(task)
 

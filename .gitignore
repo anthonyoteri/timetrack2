@@ -9,6 +9,8 @@ coverage.xml
 htmlcov/
 junitxml-result.xml
 
+*.py[coe]
+
 build/
 doc/_build/
 doc/_build_root/

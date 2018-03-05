@@ -15,6 +15,12 @@ utility
 
 ## 1.0 Release
 
+### 1.0.6
+
+>   - Fix: Timezone offset double-applied in views
+>   - Fix: Tomer edit parameter --make-running renamed --make-active
+>   - New: Provide user feedback while running commands
+
 ### 1.0.5
 
 >   - Fix: Tracebacks when starting non-existing task

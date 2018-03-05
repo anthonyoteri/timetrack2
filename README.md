@@ -15,6 +15,12 @@ utility
 
 ## 1.0 Release
 
+### 1.0.5
+
+>   - Fix: Tracebacks when starting non-existing task
+>   - New: Resume previous task
+>   - Enhancement: Major refactoring of CLI table logic
+
 ### 1.0.4
 
 >   - New: Additional shortcut parameters for summary and reporting

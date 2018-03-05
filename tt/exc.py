@@ -8,3 +8,7 @@ class ParseError(Exception):
 
 class ValidationError(Exception):
     pass
+
+
+class BadRequest(Exception):
+    pass

@@ -7,7 +7,7 @@ from unittest import mock
 import pytest
 
 from tt.datetime import tz_local
-from tt.exc import ValidationError
+from tt.exc import BadRequest, ValidationError
 from tt.orm import Task, Timer
 from tt.service import TaskService, TimerService, ReportingService
 
@@ -116,6 +116,33 @@ def test_start(create, mocker, timer_service):
     timer_service.start('foo', timestamp)
 
     create.assert_called_once_with(task='foo', start=timestamp)
+
+
+@mock.patch('tt.timer.create')
+@mock.patch('tt.timer.last')
+def test_start_resume_last_task(last, create, mocker, timer_service):
+
+    last.return_value = {'task': 'foo'}
+
+    timestamp = mocker.MagicMock(spec=datetime)
+    timer_service.start(None, timestamp)
+
+    assert last.called
+    create.assert_called_once_with(task='foo', start=timestamp)
+
+
+@mock.patch('tt.timer.create')
+@mock.patch('tt.timer.last')
+def test_start_resume_no_last_task(last, create, mocker, timer_service):
+
+    last.return_value = None
+
+    timestamp = mocker.MagicMock(spec=datetime)
+    with pytest.raises(BadRequest):
+        timer_service.start(None, timestamp)
+
+    assert last.called
+    assert not create.called
 
 
 @mock.patch('tt.timer.create')

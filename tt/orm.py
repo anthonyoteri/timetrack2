@@ -44,7 +44,7 @@ class Timer(Base):
         else:
             return self.stop - self.start
 
-    def to_dict(self):
+    def as_dict(self):
         """
         Return the object as a plain dictionary.
         """

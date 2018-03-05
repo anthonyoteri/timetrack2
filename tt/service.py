@@ -5,7 +5,9 @@ import collections
 from datetime import datetime, timedelta, timezone
 import logging
 
-from tt.exc import BadRequest
+from sqlalchemy.orm.exc import NoResultFound
+
+from tt.exc import BadRequest, ValidationError
 from tt.datatable import Datatable
 import tt.datetime
 import tt.task
@@ -32,7 +34,10 @@ class TaskService(object):
         :param name: The name of the existing task to remove.
         """
         log.debug("Removing task named %s", name)
-        tt.task.remove(name=name)
+        try:
+            tt.task.remove(name=name)
+        except ValidationError as err:
+            raise BadRequest(err)
 
     def rename(self, old_name, new_name):
         """
@@ -43,7 +48,11 @@ class TaskService(object):
 
         """
         log.debug("Renaming %s to %s", old_name, new_name)
-        task = tt.task.get(name=old_name)
+        try:
+            task = tt.task.get(name=old_name)
+        except NoResultFound:
+            raise BadRequest("Unable to locate task with name %s" % old_name)
+
         tt.task.update(task.id, name=new_name)
 
     def describe(self, name, description):
@@ -54,7 +63,11 @@ class TaskService(object):
         :param description:  The new description
         """
         log.debug("Adding description to task %s: %s", name, description)
-        task = tt.task.get(name=name)
+        try:
+            task = tt.task.get(name=name)
+        except NoResultFound:
+            raise BadRequest("Unable to locate task with name %s" % name)
+
         tt.task.update(task.id, description=description)
 
     def list(self):
@@ -87,7 +100,10 @@ class TimerService(object):
                 raise BadRequest("No task to resume")
 
         log.debug("Starting new timer for %s at %s", task, timestamp)
-        tt.timer.create(task=task, start=timestamp)
+        try:
+            tt.timer.create(task=task, start=timestamp)
+        except ValidationError as err:
+            raise BadRequest(err)
 
     def stop(self, timestamp=datetime.now(timezone.utc)):
         """
@@ -100,6 +116,8 @@ class TimerService(object):
         last = tt.timer.active()
         if last is not None:
             tt.timer.update(last.id, stop=timestamp)
+        else:
+            raise BadRequest("No running task to stop")
 
     def update(self, id, task=None, start=None, stop=None):
         """
@@ -111,7 +129,10 @@ class TimerService(object):
         :param stop: The new stop time or empty string to clear.
         """
         log.debug("Updating existing timer with id %s", id)
-        tt.timer.update(id=id, task=task, start=start, stop=stop)
+        try:
+            tt.timer.update(id=id, task=task, start=start, stop=stop)
+        except ValidationError as err:
+            raise BadRequest(err)
 
     def delete(self, id):
         """

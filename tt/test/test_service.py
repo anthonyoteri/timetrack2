@@ -5,6 +5,7 @@ from datetime import date, datetime, timedelta
 from unittest import mock
 
 import pytest
+from sqlalchemy.orm.exc import NoResultFound
 
 from tt.datetime import tz_local
 from tt.exc import BadRequest, ValidationError
@@ -53,9 +54,9 @@ def test_remove_task(remove, task_service):
 
 
 @mock.patch('tt.task.remove')
-def test_remove_validation_error(remove, task_service):
+def test_remove_invalid_task(remove, task_service):
     remove.side_effect = ValidationError
-    with pytest.raises(ValidationError):
+    with pytest.raises(BadRequest):
         task_service.remove('foo')
 
 
@@ -74,6 +75,18 @@ def test_rename_task(update, get, task_service, mocker):
 
 @mock.patch('tt.task.get')
 @mock.patch('tt.task.update')
+def test_rename_invalid_task(update, get, task_service, mocker):
+    get.side_effect = NoResultFound
+
+    with pytest.raises(BadRequest):
+        task_service.rename('old', 'new')
+
+    get.assert_called_once_with(name='old')
+    assert not update.called
+
+
+@mock.patch('tt.task.get')
+@mock.patch('tt.task.update')
 def test_describe_task(update, get, task_service, mocker):
     task = mocker.MagicMock(spec=Task)
     task.id = 1
@@ -83,6 +96,18 @@ def test_describe_task(update, get, task_service, mocker):
 
     get.assert_called_once_with(name='some task')
     update.assert_called_with(1, description='description')
+
+
+@mock.patch('tt.task.get')
+@mock.patch('tt.task.update')
+def test_describe_invalid_task(update, get, task_service, mocker):
+    get.side_effect = NoResultFound
+
+    with pytest.raises(BadRequest):
+        task_service.describe('some task', 'description')
+
+    get.assert_called_once_with(name='some task')
+    assert not update.called
 
 
 @mock.patch('tt.task.get')
@@ -146,10 +171,10 @@ def test_start_resume_no_last_task(last, create, mocker, timer_service):
 
 
 @mock.patch('tt.timer.create')
-def test_start_raises_validation_error(create, mocker, timer_service):
+def test_start_raises(create, mocker, timer_service):
     timestamp = mocker.MagicMock(spec=datetime)
     create.side_effect = ValidationError
-    with pytest.raises(ValidationError):
+    with pytest.raises(BadRequest):
         timer_service.start('foo', timestamp)
 
 
@@ -174,7 +199,8 @@ def test_stop_without_active(update, active, mocker, timer_service):
     active.return_value = None
 
     timestamp = mocker.MagicMock(spec=datetime)
-    timer_service.stop(timestamp)
+    with pytest.raises(BadRequest):
+        timer_service.stop(timestamp)
 
     assert active.called
     assert not update.called
@@ -200,6 +226,14 @@ def test_update_stop(update, mocker, timer_service):
 
     timer_service.update(id=1, stop=stop)
     update.assert_called_once_with(id=1, task=None, start=None, stop=stop)
+
+
+@mock.patch('tt.timer.update')
+def test_update_raises(update, mocker, timer_service):
+    update.side_effect = ValidationError
+
+    with pytest.raises(BadRequest):
+        timer_service.update(id=1)
 
 
 @mock.patch('tt.timer.remove')

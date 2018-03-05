@@ -182,18 +182,22 @@ def do_create(args):
     log.info('create task with name %s', args.name)
     service = TaskService()
     service.add(name=args.name, description=args.description)
+    print('Added task "%s" with description "%s"' % (args.name,
+                                                     args.description))
 
 
 def do_describe(args):
     log.info('add description to task with name %s', args.name)
     service = TaskService()
     service.describe(name=args.name, description=args.description)
+    print('Described task %s as "%s"' % (args.name, args.description))
 
 
 def do_rename(args):
     log.info('rename task %s to %s', args.old_name, args.new_name)
     service = TaskService()
     service.rename(old_name=args.old_name, new_name=args.new_name)
+    print('Renamed task "%s" to "%s"' % (args.old_name, args.new_name))
 
 
 def do_tasks(args):
@@ -210,6 +214,7 @@ def do_remove(args):
     log.info('remove task with name %s', args.name)
     service = TaskService()
     service.remove(name=args.name)
+    print('Removed task "%s"' % args.name)
 
 
 def do_start(args):
@@ -217,6 +222,7 @@ def do_start(args):
     log.info('starting timer on task %s %s', args.task, time)
     service = TimerService()
     service.start(task=args.task, timestamp=time)
+    print('Started at "%s"' % time)
 
 
 def do_stop(args):
@@ -224,6 +230,7 @@ def do_stop(args):
     log.info('stopping current timer %s', time)
     service = TimerService()
     service.stop(timestamp=time)
+    print('Stopped at "%s"' % time)
 
 
 def do_edit(args):
@@ -233,18 +240,28 @@ def do_edit(args):
 
     if args.delete:
         service.delete(id=args.id)
+        print("Deleted timer %s" % args.id)
 
     if args.start_time or args.stop_time or args.task:
         start, stop = None, None
         if args.start_time:
             start = _parse_timestamp(args.start_time)
+            print('Updating start time for timer "%s" to "%s"' % (args.id,
+                                                                  start))
         if args.stop_time:
             stop = _parse_timestamp(args.stop_time)
+            print('Updating stop time for timer "%s" to "%s"' % (args.id,
+                                                                 stop))
+
+        if args.task:
+            print('Updating task for timer "%s" to "%s"' % (args.id,
+                                                            args.task))
 
         service.update(id=args.id, task=args.task, start=start, stop=stop)
 
     if args.make_active:
         service.update(id=args.id, stop='')
+        print('Marking timer "%s" as active' % args.id)
 
 
 def do_summary(args):
@@ -388,6 +405,7 @@ def do_export(args):
         return
 
     with open(args.destination, 'w') as out:
+        print("Exporting records to %s" % args.destination)
         tt.io.dump(service, out)
 
 
@@ -399,6 +417,7 @@ def do_import(args):
         tt.io.load(task_service, timer_service, sys.stdin)
         return
     with open(args.source, 'r') as in_:
+        print('Importing records from %s' % args.source)
         tt.io.load(task_service, timer_service, in_)
 
 

@@ -88,7 +88,7 @@ def main(argv=None):
     edit_parser.add_argument('--start-time', help='Set start time')
     edit_parser.add_argument('--stop-time', help='Set stop time')
     edit_parser.add_argument(
-        '--make-running', action='store_true', help='Mark timer as running')
+        '--make-active', action='store_true', help='Mark timer as active/running')
     edit_parser.set_defaults(func=do_edit)
 
     # Commands for working with reporting
@@ -243,7 +243,7 @@ def do_edit(args):
 
         service.update(id=args.id, task=args.task, start=start, stop=stop)
 
-    if args.make_running:
+    if args.make_active:
         service.update(id=args.id, stop='')
 
 

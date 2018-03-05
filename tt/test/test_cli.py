@@ -191,8 +191,8 @@ def test_edit_task(timer_service):
         id=1, task='foobar', start=None, stop=None)
 
 
-def test_edit_make_running(timer_service):
-    tt.cli.main(['edit', '1', '--make-running'])
+def test_edit_make_active(timer_service):
+    tt.cli.main(['edit', '1', '--make-active'])
     timer_service.update.assert_called_once_with(id=1, stop='')
 
 

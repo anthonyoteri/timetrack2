@@ -308,7 +308,7 @@ class ReportingService(object):
 
     def _formatter(self, value):
         if isinstance(value, datetime):
-            return tt.datetime.local_time(value).replace(tzinfo=None)
+            return value.replace(tzinfo=None)
         if isinstance(value, timedelta):
             return tt.datetime.timedelta_to_string(value)
         return value

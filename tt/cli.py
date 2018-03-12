@@ -328,11 +328,17 @@ def do_status(args):
 
     day_begin = now
     day_end = now + timedelta(days=1)
-    print(next(
-        reporting_service.summary_by_day_and_task(
-            start=week_begin, end=week_end)))
-    print('\n')
-    print(next(reporting_service.timers_by_day(start=day_begin, end=day_end)))
+    try:
+        print(
+            next(
+                reporting_service.summary_by_day_and_task(
+                    start=week_begin, end=week_end)))
+        print('\n')
+        print(
+            next(
+                reporting_service.timers_by_day(start=day_begin, end=day_end)))
+    except StopIteration:
+        print("No records")
 
 
 def _parse_timestamp(timestamp_in):

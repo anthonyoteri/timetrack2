@@ -1,5 +1,5 @@
 NAME = timetrack2
-VERSION = 1.0.6
+VERSION = 1.0.7
 
 PYTHON_PACKAGE = tt
 CONSOLE_SCRIPTS = $(VIRTUALENV)/bin/tt

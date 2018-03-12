@@ -8,6 +8,11 @@ Roadmap
 
 1.0 Release
 -----------
+1.0.7
+^^^^^
+
+ * Fix: Traceback shown when status report called with no records
+
 1.0.6
 ^^^^^
 

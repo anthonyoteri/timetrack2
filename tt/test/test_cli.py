@@ -282,6 +282,15 @@ def test_status(mock_datetime, timer_service, reporting_service):
         start=datetime(2018, 2, 19), end=datetime(2018, 2, 20))
 
 
+@mock.patch('tt.cli.datetime', autospec=datetime)
+def test_status_no_records(mock_datetime, timer_service, reporting_service):
+    options = ['status']
+    mock_datetime.now.return_value = datetime(2018, 2, 19)
+    reporting_service.timers_by_day.side_effect = StopIteration
+
+    tt.cli.main(options)
+
+
 @pytest.mark.parametrize('destination', ['-', '/tmp/foo'])
 @mock.patch('tt.cli.open')
 @mock.patch('tt.io.dump')

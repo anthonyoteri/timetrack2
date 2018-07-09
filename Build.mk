@@ -1,4 +1,4 @@
-PYTHON ?= python3.6
+PYTHON ?= python3
 
 ifndef PYTHON_PACKAGE
 $(error PYTHON_PACKAGE not set)

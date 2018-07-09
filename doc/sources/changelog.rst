@@ -8,6 +8,11 @@ Roadmap
 
 1.0 Release
 -----------
+1.0.8
+^^^^^
+
+* Support for python 3.7
+
 1.0.7
 ^^^^^
 

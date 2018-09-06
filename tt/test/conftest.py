@@ -8,7 +8,7 @@ import pytest
 from tt.sql import connect, transaction
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def log():
     log = logging.getLogger(__name__)
     logging.basicConfig(level=logging.DEBUG)

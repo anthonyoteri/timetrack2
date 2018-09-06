@@ -95,7 +95,7 @@ class TimerService(object):
             last = tt.timer.last()
             if last is not None:
                 log.debug("Resuming last task")
-                task = last['task']
+                task = last["task"]
             else:
                 raise BadRequest("No task to resume")
 
@@ -162,13 +162,14 @@ class TimerService(object):
 
         results = collections.defaultdict(list)
         for timer in timers:
-            key = timer['start'].date()
+            key = timer["start"].date()
             results[key].append(timer)
 
         for k, v in results.items():
             if elapsed:
                 yield k, timedelta(
-                    seconds=sum([t['elapsed'].total_seconds() for t in v]))
+                    seconds=sum([t["elapsed"].total_seconds() for t in v])
+                )
             else:
                 yield k, v
 
@@ -190,13 +191,14 @@ class TimerService(object):
 
         results = collections.defaultdict(list)
         for timer in timers:
-            key = timer['task']
+            key = timer["task"]
             results[key].append(timer)
 
         for k, v in results.items():
             if elapsed:
                 yield k, timedelta(
-                    seconds=sum([t['elapsed'].total_seconds() for t in v]))
+                    seconds=sum([t["elapsed"].total_seconds() for t in v])
+                )
             else:
                 yield k, v
 
@@ -216,18 +218,18 @@ class TimerService(object):
 
         timers = tt.timer.slice(start=start, end=end)
 
-        results = collections.defaultdict(
-            lambda: collections.defaultdict(list))
+        results = collections.defaultdict(lambda: collections.defaultdict(list))
         for timer in timers:
-            date_key = timer['start'].date()
-            task_key = timer['task']
+            date_key = timer["start"].date()
+            task_key = timer["task"]
             results[date_key][task_key].append(timer)
 
         for date_key, tasks in results.items():
             for task_key, v in tasks.items():
                 if elapsed:
                     yield date_key, task_key, timedelta(
-                        seconds=sum([t['elapsed'].total_seconds() for t in v]))
+                        seconds=sum([t["elapsed"].total_seconds() for t in v])
+                    )
                 else:
                     yield date_key, task_key, v
 
@@ -240,22 +242,24 @@ class ReportingService(object):
 
     def timers_by_day(self, start, end):
         for day, timers in self.timer_service.slice_grouped_by_date(
-                start=start, end=end):
-            columns = ['id', 'task', 'start', 'stop', 'elapsed']
+            start=start, end=end
+        ):
+            columns = ["id", "task", "start", "stop", "elapsed"]
             table = Datatable(table=timers, headers=columns)
-            table.caption = day.strftime('%A %B %d, %Y')
+            table.caption = day.strftime("%A %B %d, %Y")
             yield table
 
     def summary_by_task(self, start, end):
-        columns = ['elapsed']
+        columns = ["elapsed"]
         table = Datatable(headers=columns)
 
         total = timedelta(0)
         for task, elapsed in self.timer_service.slice_grouped_by_task(
-                start=start, end=end, elapsed=True):
-            table.append({'elapsed': elapsed}, label=task)
+            start=start, end=end, elapsed=True
+        ):
+            table.append({"elapsed": elapsed}, label=task)
             total += elapsed
-        table.append({"elapsed": total}, label='TOTAL')
+        table.append({"elapsed": total}, label="TOTAL")
 
         return table
 
@@ -271,7 +275,9 @@ class ReportingService(object):
 
             slice_ = list(
                 self.timer_service.slice_grouped_by_date_task(
-                    start=week_start, end=week_end, elapsed=True))
+                    start=week_start, end=week_end, elapsed=True
+                )
+            )
 
             if not slice_:
                 continue
@@ -286,23 +292,27 @@ class ReportingService(object):
                 day_totals[date_key] += elapsed
 
             table = Datatable(
-                header_fn=lambda x: x.strftime('%a %b %d'),
-                label_header=' ' * 16,
-                summary_header='Total')
+                header_fn=lambda x: x.strftime("%a %b %d"),
+                label_header=" " * 16,
+                summary_header="Total",
+            )
             for t in sheet:
                 row = {k: v for k, v in sheet[t].items()}
                 table.append(
                     row,
                     label=t,
-                    summary=tt.datetime.timedelta_to_string(task_totals[t]))
+                    summary=tt.datetime.timedelta_to_string(task_totals[t]),
+                )
             total_time = timedelta(
-                seconds=sum([t.total_seconds() for t in day_totals.values()]))
+                seconds=sum([t.total_seconds() for t in day_totals.values()])
+            )
             table.append(
                 day_totals,
                 label="TOTAL",
-                summary=tt.datetime.timedelta_to_string(total_time))
+                summary=tt.datetime.timedelta_to_string(total_time),
+            )
 
-            table.caption = 'Week %s' % week_start.strftime('%W')
+            table.caption = "Week %s" % week_start.strftime("%W")
 
             yield table
 

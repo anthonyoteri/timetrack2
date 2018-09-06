@@ -24,12 +24,12 @@ def dump(service, out):
     for _, timers in service.slice_grouped_by_date():
         for timer in timers:
             record = {
-                'task': timer['task'],
-                'start': timer['start'].isoformat(),
-                'elapsed': int(timer['elapsed'].total_seconds())
+                "task": timer["task"],
+                "start": timer["start"].isoformat(),
+                "elapsed": int(timer["elapsed"].total_seconds()),
             }
         json.dump(record, out)
-        out.write('\n')
+        out.write("\n")
 
 
 def load(task_service, timer_service, lines):
@@ -52,11 +52,10 @@ def load(task_service, timer_service, lines):
     for line in lines:
         obj = json.loads(line.strip())
         try:
-            task_service.add(name=obj['task'])
+            task_service.add(name=obj["task"])
         except ValidationError:
             pass
 
-        timestamp = iso8601.parse_date(obj['start'])
-        timer_service.start(task=obj['task'], timestamp=timestamp)
-        timer_service.stop(
-            timestamp=timestamp + timedelta(seconds=int(obj['elapsed'])))
+        timestamp = iso8601.parse_date(obj["start"])
+        timer_service.start(task=obj["task"], timestamp=timestamp)
+        timer_service.stop(timestamp=timestamp + timedelta(seconds=int(obj["elapsed"])))

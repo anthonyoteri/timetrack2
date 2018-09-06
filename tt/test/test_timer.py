@@ -12,14 +12,13 @@ from tt.orm import Task, Timer
 
 @pytest.fixture
 def task(session):
-    return Task(name='foo')
+    return Task(name="foo")
 
 
 def test_create(session, task):
     session.add(task)
 
-    start = datetime.now(
-        timezone.utc).replace(microsecond=0) - timedelta(hours=1)
+    start = datetime.now(timezone.utc).replace(microsecond=0) - timedelta(hours=1)
     tt.timer.create(task=task.name, start=start)
 
     assert session.query(Timer).count() == 1
@@ -42,7 +41,7 @@ def test_create_start_in_the_future_raises(session, task):
 
 def test_create_invalid_task_raises(session):
 
-    assert session.query(Task).filter(Task.name == 'bad').count() == 0
+    assert session.query(Task).filter(Task.name == "bad").count() == 0
     with pytest.raises(ValidationError):
         tt.timer.create(task="bad", start=datetime.now(timezone.utc))
 
@@ -76,8 +75,8 @@ def test_create_second_timer_stops_first(session, task):
 
 def test_update_timer_task(session):
 
-    old_task = Task(name='old')
-    new_task = Task(name='new')
+    old_task = Task(name="old")
+    new_task = Task(name="new")
 
     session.add_all([old_task, new_task])
 
@@ -95,7 +94,7 @@ def test_update_timer_invalid_task_raises(session, task):
     session.add(Timer(task=task, start=datetime.now(timezone.utc)))
 
     with pytest.raises(ValidationError):
-        tt.timer.update(1, task='invalid_task_name')
+        tt.timer.update(1, task="invalid_task_name")
 
 
 def test_update_time_start(session, task):
@@ -115,11 +114,12 @@ def test_update_time_start(session, task):
 
 
 @pytest.mark.parametrize(
-    'offset',
+    "offset",
     [
         timedelta(minutes=-30),  # Start time after stop time
         timedelta(hours=1),  # Start time in the future
-    ])
+    ],
+)
 def test_update_invalid_start_raises(session, task, offset):
 
     session.add(task)
@@ -161,18 +161,19 @@ def test_update_time_stop_empty_string(session, task):
 
     session.add(Timer(task=task, start=two_hours_ago, stop=one_hour_ago))
 
-    tt.timer.update(1, stop='')
+    tt.timer.update(1, stop="")
 
     timer = session.query(Timer).get(1)
     assert timer.stop is None
 
 
 @pytest.mark.parametrize(
-    'offset',
+    "offset",
     [
         timedelta(hours=1),  # Stop time in the future
         timedelta(hours=-2),  # Stop time before start
-    ])
+    ],
+)
 def test_update_stop_time_invalid_constraint(session, task, offset):
 
     session.add(task)
@@ -214,9 +215,9 @@ def test_active_stopped(session, task):
 
     session.add(
         Timer(
-            task=task,
-            start=datetime.now(timezone.utc),
-            stop=datetime.now(timezone.utc)))
+            task=task, start=datetime.now(timezone.utc), stop=datetime.now(timezone.utc)
+        )
+    )
 
     assert tt.timer.active() is None
 
@@ -224,16 +225,15 @@ def test_active_stopped(session, task):
 def test_last(session, task):
     session.add(task)
     timers = [
-        Timer(
-            task=task, start=datetime.now(timezone.utc) + timedelta(hours=i))
+        Timer(task=task, start=datetime.now(timezone.utc) + timedelta(hours=i))
         for i in range(-5, 0)
     ]
     session.add_all(timers)
 
     last = tt.timer.last()
     assert last is not None
-    assert last['id'] == 5
-    assert last['task'] == task.name
+    assert last["id"] == 5
+    assert last["task"] == task.name
 
 
 def test_last_empty_db(session, task):
@@ -260,7 +260,7 @@ def test_timers(session, task):
     assert len(list(timers_)) == 100
 
 
-@pytest.mark.parametrize('running', [False, True])
+@pytest.mark.parametrize("running", [False, True])
 def test_validate(running):
 
     start = datetime.now(timezone.utc) - timedelta(hours=1)
@@ -312,5 +312,5 @@ def test_slice(session, task):
     assert len(slice_) == 23
 
     for s in slice_:
-        assert s['start'] >= start
-        assert s['start'] < now
+        assert s["start"] >= start
+        assert s["start"] < now

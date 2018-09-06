@@ -22,46 +22,38 @@ def task_service(mocker):
     return mocker.MagicMock(spec=tt.service.TaskService)
 
 
-@mock.patch('json.dump')
+@mock.patch("json.dump")
 def test_dump(json_dump, timer_service, mocker):
     out = mocker.MagicMock(spec=io.TextIOWrapper)
     start = mocker.MagicMock(spec=datetime)
-    start.isoformat.return_value = '2018-01-01T00:00:00Z'
+    start.isoformat.return_value = "2018-01-01T00:00:00Z"
     elapsed = mocker.MagicMock(spec=timedelta)
     elapsed.total_seconds.return_value = 600.0
 
-    timer_service.slice_grouped_by_date.return_value = [(start, [{
-        'task':
-        'foo',
-        'start':
-        start,
-        'elapsed':
-        elapsed
-    }])]
+    timer_service.slice_grouped_by_date.return_value = [
+        (start, [{"task": "foo", "start": start, "elapsed": elapsed}])
+    ]
 
     dump(timer_service, out)
 
-    json_dump.assert_called_with({
-        'task': 'foo',
-        'start': '2018-01-01T00:00:00Z',
-        'elapsed': 600
-    }, out)
+    json_dump.assert_called_with(
+        {"task": "foo", "start": "2018-01-01T00:00:00Z", "elapsed": 600}, out
+    )
 
 
 def test_load(task_service, timer_service):
 
-    lines = [
-        '{"task": "foo", "start": "2018-01-01T00:00:00Z", "elapsed": 600}\n',
-    ]
+    lines = ['{"task": "foo", "start": "2018-01-01T00:00:00Z", "elapsed": 600}\n']
 
     load(task_service, timer_service, lines)
 
-    task_service.add.assert_called_once_with(name='foo')
+    task_service.add.assert_called_once_with(name="foo")
     timer_service.start.assert_called_once_with(
-        task='foo',
-        timestamp=datetime(2018, 1, 1, 0, 0, 0, tzinfo=timezone.utc))
+        task="foo", timestamp=datetime(2018, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+    )
     timer_service.stop.assert_called_once_with(
-        timestamp=datetime(2018, 1, 1, 0, 10, 0, tzinfo=timezone.utc))
+        timestamp=datetime(2018, 1, 1, 0, 10, 0, tzinfo=timezone.utc)
+    )
 
 
 def test_load_duplicate_task(task_service, timer_service):
@@ -75,26 +67,21 @@ def test_load_duplicate_task(task_service, timer_service):
 
     load(task_service, timer_service, lines)
 
-    add_calls = [
-        mock.call(name='foo'),
-        mock.call(name='foo'),
-    ]
+    add_calls = [mock.call(name="foo"), mock.call(name="foo")]
     task_service.add.assert_has_calls(add_calls)
 
     start_calls = [
         mock.call(
-            task='foo',
-            timestamp=datetime(2018, 1, 1, 0, 0, 0, tzinfo=timezone.utc)),
+            task="foo", timestamp=datetime(2018, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+        ),
         mock.call(
-            task='foo',
-            timestamp=datetime(2018, 1, 1, 0, 10, 0, tzinfo=timezone.utc)),
+            task="foo", timestamp=datetime(2018, 1, 1, 0, 10, 0, tzinfo=timezone.utc)
+        ),
     ]
     timer_service.start.assert_has_calls(start_calls)
 
     stop_calls = [
-        mock.call(
-            timestamp=datetime(2018, 1, 1, 0, 10, 0, tzinfo=timezone.utc)),
-        mock.call(
-            timestamp=datetime(2018, 1, 1, 0, 20, 0, tzinfo=timezone.utc)),
+        mock.call(timestamp=datetime(2018, 1, 1, 0, 10, 0, tzinfo=timezone.utc)),
+        mock.call(timestamp=datetime(2018, 1, 1, 0, 20, 0, tzinfo=timezone.utc)),
     ]
     timer_service.stop.assert_has_calls(stop_calls)

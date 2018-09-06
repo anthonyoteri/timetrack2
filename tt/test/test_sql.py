@@ -3,5 +3,5 @@
 
 
 def test_can_access_db(session):
-    result = session.execute('select 1')
+    result = session.execute("select 1")
     assert result.scalar() == 1

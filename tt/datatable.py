@@ -37,19 +37,21 @@ class Datatable(object):
     value_fn = None
     """Default function to apply to all values."""
 
-    def __init__(self,
-                 table=None,
-                 headers=None,
-                 labels=None,
-                 summaries=None,
-                 label_header=None,
-                 summary_header=None,
-                 table_fmt=None,
-                 sort_fn=None,
-                 header_fn=None,
-                 label_fn=None,
-                 summary_fn=None,
-                 value_fn=None):
+    def __init__(
+        self,
+        table=None,
+        headers=None,
+        labels=None,
+        summaries=None,
+        label_header=None,
+        summary_header=None,
+        table_fmt=None,
+        sort_fn=None,
+        header_fn=None,
+        label_fn=None,
+        summary_fn=None,
+        value_fn=None,
+    ):
 
         self.table = list(table) if table is not None else list()
         self.headers = headers if headers is not None else set()
@@ -125,8 +127,8 @@ class Datatable(object):
                 summary = []
 
             result.append(
-                label + [self.value_fn(row.get(h))
-                         for h in self.headers] + summary)
+                label + [self.value_fn(row.get(h)) for h in self.headers] + summary
+            )
 
         headers = list(self.header_fn(h) for h in self.headers)
         if self.label_header is not None and any(self.labels):

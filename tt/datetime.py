@@ -43,7 +43,7 @@ def range_weeks(start, end):
     :param end: The ending date, exclusive.
     :yields: One datetime.datetime object per week between start and end.
     """
-    for ts in pandas.date_range(start, end, freq='W-MON'):
+    for ts in pandas.date_range(start, end, freq="W-MON"):
         yield ts.to_pydatetime()
 
 

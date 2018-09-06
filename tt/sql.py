@@ -12,9 +12,7 @@ import sqlite3
 log = logging.getLogger(__name__)
 Session = scoped_session(sessionmaker(expire_on_commit=False))
 
-DB_CONNECT_ARGS = {
-    'detect_types': sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
-}
+DB_CONNECT_ARGS = {"detect_types": sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES}
 
 
 class _Base(object):
@@ -28,14 +26,20 @@ class _Base(object):
         return True
 
     def __str__(self):
-        fields = ('%s="%s"' % (k, v) for k, v in self.__dict__.items()
-                  if not k.startswith('_'))
-        return "<%s[%s]>" % (self.__class__.__name__, ', '.join(fields))
+        fields = (
+            '%s="%s"' % (k, v)
+            for k, v in self.__dict__.items()
+            if not k.startswith("_")
+        )
+        return "<%s[%s]>" % (self.__class__.__name__, ", ".join(fields))
 
     def __repr__(self):
-        fields = ('%s="%r"' % (k, v) for k, v in self.__dict__.items()
-                  if not k.startswith('_'))
-        return "<%s[%s]>" % (self.__class__.__name__, ', '.join(fields))
+        fields = (
+            '%s="%r"' % (k, v)
+            for k, v in self.__dict__.items()
+            if not k.startswith("_")
+        )
+        return "<%s[%s]>" % (self.__class__.__name__, ", ".join(fields))
 
 
 Base = declarative_base(cls=_Base)
@@ -55,7 +59,7 @@ def transaction():
         Session.remove()
 
 
-def connect(db_url='sqlite:///timetrack.db', echo=False):
+def connect(db_url="sqlite:///timetrack.db", echo=False):
     """
     Create a persistent connection to the given database.
 
@@ -67,6 +71,7 @@ def connect(db_url='sqlite:///timetrack.db', echo=False):
     log.info("Connecting to database %s", db_url)
 
     engine = create_engine(
-        db_url, connect_args=DB_CONNECT_ARGS, native_datetime=True, echo=echo)
+        db_url, connect_args=DB_CONNECT_ARGS, native_datetime=True, echo=echo
+    )
     Base.metadata.create_all(engine)
     Session.configure(bind=engine)

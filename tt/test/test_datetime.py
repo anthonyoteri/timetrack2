@@ -25,8 +25,7 @@ def test_range_weekdays():
     start = datetime(1970, 1, 1)
     end = datetime(1971, 1, 1)
 
-    expected = list(
-        ts.to_pydatetime() for ts in pandas.bdate_range(start, end))
+    expected = list(ts.to_pydatetime() for ts in pandas.bdate_range(start, end))
     actual = list(tt.datetime.range_weekdays(start, end))
 
     assert expected == actual
@@ -36,24 +35,28 @@ def test_range_weeks():
     start = datetime(1970, 1, 1)
     end = datetime(1971, 1, 1)
 
-    expected = list(ts.to_pydatetime()
-                    for ts in pandas.date_range(start, end, freq='W-MON'))
+    expected = list(
+        ts.to_pydatetime() for ts in pandas.date_range(start, end, freq="W-MON")
+    )
     actual = list(tt.datetime.range_weeks(start, end))
 
     assert expected == actual
 
 
-@pytest.mark.parametrize('samples', [
-    (datetime(2018, 2, 11), datetime(2018, 2, 5), datetime(2018, 2, 12)),
-    (datetime(2018, 2, 12), datetime(2018, 2, 12), datetime(2018, 2, 19)),
-    (datetime(2018, 2, 13), datetime(2018, 2, 12), datetime(2018, 2, 19)),
-    (datetime(2018, 2, 14), datetime(2018, 2, 12), datetime(2018, 2, 19)),
-    (datetime(2018, 2, 15), datetime(2018, 2, 12), datetime(2018, 2, 19)),
-    (datetime(2018, 2, 16), datetime(2018, 2, 12), datetime(2018, 2, 19)),
-    (datetime(2018, 2, 17), datetime(2018, 2, 12), datetime(2018, 2, 19)),
-    (datetime(2018, 2, 18), datetime(2018, 2, 12), datetime(2018, 2, 19)),
-    (datetime(2018, 2, 19), datetime(2018, 2, 19), datetime(2018, 2, 26)),
-])
+@pytest.mark.parametrize(
+    "samples",
+    [
+        (datetime(2018, 2, 11), datetime(2018, 2, 5), datetime(2018, 2, 12)),
+        (datetime(2018, 2, 12), datetime(2018, 2, 12), datetime(2018, 2, 19)),
+        (datetime(2018, 2, 13), datetime(2018, 2, 12), datetime(2018, 2, 19)),
+        (datetime(2018, 2, 14), datetime(2018, 2, 12), datetime(2018, 2, 19)),
+        (datetime(2018, 2, 15), datetime(2018, 2, 12), datetime(2018, 2, 19)),
+        (datetime(2018, 2, 16), datetime(2018, 2, 12), datetime(2018, 2, 19)),
+        (datetime(2018, 2, 17), datetime(2018, 2, 12), datetime(2018, 2, 19)),
+        (datetime(2018, 2, 18), datetime(2018, 2, 12), datetime(2018, 2, 19)),
+        (datetime(2018, 2, 19), datetime(2018, 2, 19), datetime(2018, 2, 26)),
+    ],
+)
 def test_week_boundaries(samples):
     date, expected_begin, expected_end = samples
     assert tt.datetime.week_boundaries(date) == (expected_begin, expected_end)
@@ -119,7 +122,7 @@ def test_start_of_day():
     assert expected == actual
 
 
-@mock.patch('tt.datetime.datetime')
+@mock.patch("tt.datetime.datetime")
 def test_start_of_day_no_param(mock_dt):
     t = datetime.now(tz.tzlocal())
 
@@ -134,20 +137,22 @@ def test_start_of_week():
     t = datetime.now(tz.tzlocal())
 
     expected = (t - timedelta(days=t.weekday())).replace(
-        hour=0, minute=0, second=0, microsecond=0)
+        hour=0, minute=0, second=0, microsecond=0
+    )
     actual = tt.datetime.start_of_week(t)
 
     assert expected == actual
 
 
-@mock.patch('tt.datetime.datetime')
+@mock.patch("tt.datetime.datetime")
 def test_start_of_week_no_param(mock_dt):
     t = datetime.now(tz.tzlocal())
 
     mock_dt.now.return_value = t
 
     expected = (t - timedelta(days=t.weekday())).replace(
-        hour=0, minute=0, second=0, microsecond=0)
+        hour=0, minute=0, second=0, microsecond=0
+    )
     actual = tt.datetime.start_of_week()
 
     assert expected == actual
@@ -162,7 +167,7 @@ def test_start_of_month():
     assert expected == actual
 
 
-@mock.patch('tt.datetime.datetime')
+@mock.patch("tt.datetime.datetime")
 def test_start_of_month_no_param(mock_dt):
     t = datetime.now(tz.tzlocal())
 
@@ -177,21 +182,19 @@ def test_start_of_month_no_param(mock_dt):
 def test_start_of_year():
     t = datetime.now(tz.tzlocal())
 
-    expected = t.replace(
-        month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+    expected = t.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
     actual = tt.datetime.start_of_year(t)
 
     assert expected == actual
 
 
-@mock.patch('tt.datetime.datetime')
+@mock.patch("tt.datetime.datetime")
 def test_start_of_year_no_param(mock_dt):
     t = datetime.now(tz.tzlocal())
 
     mock_dt.now.return_value = t
 
-    expected = t.replace(
-        month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+    expected = t.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
     actual = tt.datetime.start_of_year()
 
     assert expected == actual

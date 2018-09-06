@@ -23,7 +23,7 @@ def create(name, description=None):
     :raises: ValidationError If there is a database conflict because a task
              with the given name already exists, or if the name is invalid.
     """
-    log.debug('creating task with name %s, description=%s', name, description)
+    log.debug("creating task with name %s, description=%s", name, description)
 
     if name == "":
         raise ValidationError("Cannot use empty name")
@@ -62,7 +62,7 @@ def update(id, name=None, description=None):
     :raises: ValidationError If the name already exists on a different task,
              or if the name is invalid.
     """
-    log.debug('updating task %s with name=%s', id, name)
+    log.debug("updating task %s with name=%s", id, name)
 
     try:
         with transaction() as session:
@@ -70,7 +70,7 @@ def update(id, name=None, description=None):
             if name is not None:
                 task.name = name
             if description is not None:
-                if description == '':
+                if description == "":
                     task.description = None
                 else:
                     task.description = description
@@ -96,14 +96,14 @@ def remove(name):
     :raises: ValidationError if no task exists with the given name, or if
              there is a problem removing the task.
     """
-    log.debug('remove task with name %s', name)
+    log.debug("remove task with name %s", name)
 
     try:
         with transaction() as session:
             try:
                 task = session.query(Task).filter(Task.name == name).one()
             except NoResultFound:
-                raise ValidationError('no such task with name %s', name)
+                raise ValidationError("no such task with name %s", name)
 
             session.delete(task)
     except IntegrityError:

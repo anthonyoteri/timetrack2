@@ -1,20 +1,17 @@
+sudo: required
+dist: xenial
 language: python
-
-# Use containers instead of full VMs for faster startup.
-sudo: false
-
-python:
-  - 3.6
-  - 3.7
-
+cache: pip
 install:
   - pip install -r requirements.txt
   - pip install -r requirements-test.txt
-  - pip install coveralls
-  - pip install .
-
+  - pip install -e .
 script:
   - python setup.py test
-
 after_success:
   - coveralls
+matrix:
+  include:
+    - python: 3.6
+    - python: 3.7
+    - python: 3.8-dev
